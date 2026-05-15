@@ -14,6 +14,13 @@ function makeToken(username: string) {
   return Buffer.from(`${payload}:${sig}`).toString("base64");
 }
 
+type UserRow = {
+  id: number;
+  username: string;
+  password_hash: string;
+  role: "user" | "admin";
+};
+
 export async function POST(req: Request) {
   const body = await req.json();
   const { username, password } = body;
@@ -23,11 +30,13 @@ export async function POST(req: Request) {
 
   const supabase = getSupabase();
 
-  const { data: user, error } = await supabase
+  const { data, error } = await supabase
     .from("users")
     .select("id, username, password_hash, role")
     .eq("username", username)
     .maybeSingle();
+
+  const user = data as UserRow | null;
 
   if (error || !user) {
     return NextResponse.json({ error: "Usuario o contraseña incorrectos" }, { status: 401 });
