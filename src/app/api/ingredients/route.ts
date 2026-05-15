@@ -28,13 +28,12 @@ export async function GET(req: Request) {
   const username = getUsername(req);
   if (!username) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const supabase = getSupabase();
-
-  const { data: ingredients, error } = await supabase
-    .from("ingredients")
-    .select("id, username, name, quantity, unit, created_at")
-    .eq("username", username)
-    .order("id", { ascending: true });
+    const supabase = getSupabase();
+    const ingredientsTable = supabase.from("ingredients") as any;
+    const { data: ingredients, error } = await ingredientsTable
+      .select("id, username, name, quantity, unit, created_at")
+      .eq("username", username)
+      .order("id", { ascending: true });
 
   if (error) {
     return NextResponse.json({ error: "No se pudieron cargar los ingredientes" }, { status: 500 });
@@ -57,7 +56,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const username = getUsername(req);
   if (!username) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const supabase = getSupabase();
+    const supabase = getSupabase();
+    const ingredientsTable = supabase.from("ingredients") as any;
   
   const body = await req.json();
   const { name, quantity, unit } = body;
@@ -65,16 +65,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Se requieren nombre y cantidad" }, { status: 400 });
   }
 
-  const { data: ingredient, error } = await supabase
-    .from("ingredients")
-    .insert({
-      username,
-      name,
-      quantity: parseFloat(quantity),
-      unit: unit || "unidad",
-    })
-    .select("id, username, name, quantity, unit, created_at")
-    .single();
+    const { data: ingredient, error } = await ingredientsTable
+      .insert({
+        username,
+        name,
+        quantity: parseFloat(quantity),
+        unit: unit || "unidad",
+      })
+      .select("id, username, name, quantity, unit, created_at")
+      .single();
 
   if (error || !ingredient) {
     return NextResponse.json({ error: "No se pudo guardar el ingrediente" }, { status: 500 });
@@ -95,7 +94,8 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   const username = getUsername(req);
   if (!username) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const supabase = getSupabase();
+    const supabase = getSupabase();
+    const ingredientsTable = supabase.from("ingredients") as any;
   
   const body = await req.json();
   const { id, name, quantity, unit } = body;
@@ -106,13 +106,12 @@ export async function PUT(req: Request) {
   if (quantity !== undefined) updates.quantity = parseFloat(quantity);
   if (unit !== undefined) updates.unit = unit;
 
-  const { data: ingredient, error } = await supabase
-    .from("ingredients")
-    .update(updates)
-    .eq("id", Number(id))
-    .eq("username", username)
-    .select("id, username, name, quantity, unit, created_at")
-    .maybeSingle();
+    const { data: ingredient, error } = await ingredientsTable
+      .update(updates)
+      .eq("id", Number(id))
+      .eq("username", username)
+      .select("id, username, name, quantity, unit, created_at")
+      .maybeSingle();
 
   if (error || !ingredient) {
     return NextResponse.json({ error: "ingredient not found" }, { status: 404 });
@@ -133,18 +132,18 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   const username = getUsername(req);
   if (!username) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const supabase = getSupabase();
+    const supabase = getSupabase();
+    const ingredientsTable = supabase.from("ingredients") as any;
   
   const body = await req.json();
   const { id } = body;
   if (!id) return NextResponse.json({ error: "Se requiere id" }, { status: 400 });
 
-  const { data, error } = await supabase
-    .from("ingredients")
-    .delete()
-    .eq("id", Number(id))
-    .eq("username", username)
-    .select("id");
+    const { data, error } = await ingredientsTable
+      .delete()
+      .eq("id", Number(id))
+      .eq("username", username)
+      .select("id");
 
   if (error || !data || data.length === 0) {
     return NextResponse.json({ error: "ingredient not found" }, { status: 404 });

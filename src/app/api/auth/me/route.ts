@@ -26,11 +26,15 @@ export async function GET(req: Request) {
 
   const supabase = getSupabase();
 
-  const { data: user, error } = await supabase
+  type UserRow = { id: number; username: string; role: string };
+
+  const { data, error } = await supabase
     .from("users")
     .select("id, username, role")
     .eq("username", username)
     .maybeSingle();
+
+  const user = data as UserRow | null;
 
   if (error || !user) return NextResponse.json({ error: "not found" }, { status: 404 });
 
