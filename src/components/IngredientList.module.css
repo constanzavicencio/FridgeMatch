@@ -1,0 +1,127 @@
+.container {
+  width: 100%;
+}
+
+.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 2rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--card-bg, #ffffff);
+  border-radius: 8px;
+  transition: all 150ms ease;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.image,
+.imagePlaceholder {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 8px;
+}
+
+.image {
+  object-fit: contain;
+}
+
+.imagePlaceholder {
+  display: inline-block;
+}
+
+.item:hover {
+  box-shadow: none;
+}
+
+.name {
+  font-weight: 600;
+  min-width: 0;
+}
+
+.info {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.qty {
+  color: var(--muted);
+  font-size: 0.95rem;
+  min-width: 120px;
+}
+
+.edit, .delete {
+  padding: 0.45rem 0.75rem;
+  border: 1px solid rgba(0, 61, 130, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 150ms ease;
+  background: transparent;
+}
+
+.edit:hover {
+  background: rgba(0, 61, 130, 0.08);
+  border-color: var(--jumbo-blue);
+}
+
+.delete:hover {
+  background: rgba(248, 230, 136, 0.08);
+  border-color: var(--jumbo-yellow);
+}
+
+.editForm {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex: 1;
+}
+
+.editForm input,
+.editForm select {
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.editForm button {
+  padding: 0.45rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  background: var(--jumbo-green);
+  color: white;
+  transition: all 150ms ease;
+}
+
+.editForm button:hover {
+  background: #076a18;
+}
+
+.cancel {
+  background: #cccccc !important;
+}
+
+.cancel:hover {
+  background: #999999 !important;
+}

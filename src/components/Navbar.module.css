@@ -1,0 +1,80 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 3px solid var(--jumbo-green);
+  background: var(--jumbo-white);
+}
+
+.brand a {
+  font-weight: 700;
+  color: var(--jumbo-green);
+  text-decoration: none;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  height: 40px;
+  max-width: 200px;
+  object-fit: contain;
+}
+
+.nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav a {
+  color: var(--jumbo-dark);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: color 150ms ease;
+}
+
+.nav a:hover {
+  color: var(--jumbo-green);
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btn {
+  background: var(--jumbo-green);
+  color: white;
+  border: none;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 150ms ease;
+}
+
+.btn:hover {
+  background: #076a18;
+}
+
+.link {
+  color: var(--jumbo-dark);
+  text-decoration: none;
+  padding: 0.35rem 0.5rem;
+  font-weight: 600;
+  transition: color 150ms ease;
+}
+
+.link:hover {
+  color: var(--jumbo-green);
+}
+
+.user {
+  font-weight: 600;
+  color: var(--jumbo-green);
+  font-size: 0.95rem;
+}

@@ -1,0 +1,48 @@
+.form {
+  display: grid;
+  grid-template-columns: 1fr 0.5fr 0.6fr auto;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--card-bg, #ffffff);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.input {
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.input:focus {
+  outline: 2px solid var(--jumbo-green);
+  outline-offset: -1px;
+}
+
+.form button {
+  background: var(--jumbo-green);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.form button:hover:not(:disabled) {
+  background: #076a18;
+  transform: translateY(-2px);
+}
+
+.form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 800px) {
+  .form {
+    grid-template-columns: 1fr;
+  }
+}

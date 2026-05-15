@@ -1,0 +1,35 @@
+input, textarea, select {
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: 2px solid var(--jumbo-green);
+  outline-offset: -1px;
+}
+
+button {
+  border-radius: 8px;
+}
+
+form {
+  display: grid;
+  gap: 1rem;
+}
+
+form button {
+  background: var(--jumbo-green);
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+form button:hover {
+  background: #076a18;
+  transform: translateY(-2px);
+}

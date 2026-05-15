@@ -1,0 +1,27 @@
+.btn {
+  background: var(--jumbo-green);
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none;
+  transition: all 150ms ease;
+}
+
+.btn:hover {
+  background: #076a18;
+  transform: translateY(-2px);
+  box-shadow: none;
+}
+
+.btn:active {
+  transform: translateY(0);
+  background: #05520d;
+}
+
+.btn:focus {
+  outline: 3px solid rgba(10, 137, 32, 0.25);
+  outline-offset: 2px;
+}

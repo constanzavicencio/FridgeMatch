@@ -1,0 +1,15 @@
+.card {
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: var(--card-bg, #ffffff);
+  color: var(--foreground, #333333);
+  box-shadow: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    --card-bg: #2a2a2a;
+    color: #f5f5f5;
+    box-shadow: none;
+  }
+}
