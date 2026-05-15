@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-const SwaggerUI = dynamic(() => import("swagger-ui-react"), { ssr: false });
+const SwaggerUI = dynamic(() => Promise.resolve(require("swagger-ui-react").default), { ssr: false });
 import "swagger-ui-react/swagger-ui.css";
 
 export default function ApiDocsPage() {
