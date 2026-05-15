@@ -40,8 +40,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "No se pudieron cargar los ingredientes" }, { status: 500 });
   }
 
+  const rows = (ingredients ?? []) as any[];
+
   return NextResponse.json({
-    ingredients: (ingredients ?? []).map((ingredient) => ({
+    ingredients: rows.map((ingredient) => ({
       id: ingredient.id,
       username: ingredient.username,
       name: ingredient.name,
