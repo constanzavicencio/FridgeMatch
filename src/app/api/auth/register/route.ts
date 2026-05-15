@@ -17,8 +17,9 @@ export async function POST(req: Request) {
 
   const supabase = getSupabase();
 
-  const { data: existingUser } = await supabase
-    .from("users")
+  const usersTable = supabase.from("users") as any;
+
+  const { data: existingUser } = await usersTable
     .select("id")
     .eq("username", username)
     .maybeSingle();
@@ -27,8 +28,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "El usuario ya existe" }, { status: 409 });
   }
 
-  const { data: user, error } = await supabase
-    .from("users")
+  const { data: user, error } = await usersTable
     .insert({
       username,
       password_hash: hashPassword(password),
