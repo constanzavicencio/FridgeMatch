@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { supabase } from "@/lib/supabase-server";
+import { getSupabase } from "@/lib/supabase-server";
 
 const SECRET = process.env.AUTH_SECRET || "dev-secret";
 
@@ -20,6 +20,8 @@ export async function POST(req: Request) {
   if (!username || !password) {
     return NextResponse.json({ error: "Se requieren usuario y contraseña" }, { status: 400 });
   }
+
+  const supabase = getSupabase();
 
   const { data: user, error } = await supabase
     .from("users")
