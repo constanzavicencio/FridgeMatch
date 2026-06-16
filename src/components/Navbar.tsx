@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "./Navbar.module.css";
+import Image from "next/image";
 
 type User = {
   username: string;
@@ -49,13 +50,14 @@ export default function Navbar() {
     <header className={styles.header}>
       <div className={styles.brand}>
         <Link href={user ? "/sesion" : "/"}>
-          <img src="/logo.png" alt="FridgeMatch" className={styles.logo} />
+          <Image loading="eager" src="/logo.png" alt="FridgeMatch" width={100} height={50} className={styles.logo} />
         </Link>
       </div>
       <nav className={styles.nav}>
         {!user && <Link href="/">Inicio</Link>}
         <Link href="/recetas">Recetas</Link>
         {user && user.role === "user" && <Link href="/fridge">Mi Refrigerador</Link>}
+        {user && user.role === "admin" && <Link href="/admin/ingredientes">Ingredientes admin</Link>}
         {user && <Link href="/perfil">Perfil</Link>}
       </nav>
       <div className={styles.actions}>

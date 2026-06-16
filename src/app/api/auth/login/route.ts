@@ -39,11 +39,15 @@ export async function POST(req: Request) {
   const user = data as UserRow | null;
 
   if (error || !user) {
-    return NextResponse.json({ error: "Usuario o contraseña incorrectos" }, { status: 401 });
+    return NextResponse.json({ error: "Error al iniciar sesión" }, { status: 401 });
+  }
+
+  if (!user) {
+    return NextResponse.json({ error: "Usuario no encontrado" }, { status: 401 });
   }
 
   if (user.password_hash !== hashPassword(password)) {
-    return NextResponse.json({ error: "Usuario o contraseña incorrectos" }, { status: 401 });
+    return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });
   }
 
   const token = makeToken(username);

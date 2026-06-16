@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { getSupabase } from "@/lib/supabase-server";
 
-const SECRET = process.env.AUTH_SECRET || "dev-secret";
-
 function hashPassword(password: string) {
   return crypto.createHash("sha256").update(password).digest("hex");
 }
@@ -12,7 +10,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { username, password, role } = body;
   if (!username || !password) {
-    return NextResponse.json({ error: "Se requieren usuario y contraseña" }, { status: 400 });
+    return NextResponse.json({ error: "Se requiere usuario y contraseña" }, { status: 400 });
   }
 
   const supabase = getSupabase();
@@ -25,7 +23,7 @@ export async function POST(req: Request) {
     .maybeSingle();
 
   if (existingUser) {
-    return NextResponse.json({ error: "El usuario ya existe" }, { status: 409 });
+    return NextResponse.json({ error: "Ese nombre de usuario ya se encuentra registrado" }, { status: 409 });
   }
 
   const { data: user, error } = await usersTable
@@ -38,7 +36,7 @@ export async function POST(req: Request) {
     .single();
 
   if (error || !user) {
-    return NextResponse.json({ error: "No se pudo completar el registro" }, { status: 500 });
+    return NextResponse.json({ error: "Error al intentar completar el registro" }, { status: 500 });
   }
 
   return NextResponse.json({ user }, { status: 201 });

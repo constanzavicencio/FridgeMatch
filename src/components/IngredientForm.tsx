@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import styles from "./IngredientForm.module.css";
 
 type IngredientFormProps = {
@@ -26,7 +27,7 @@ export default function IngredientForm({ onAdd, isLoading }: IngredientFormProps
     <form onSubmit={handleSubmit} className={styles.form}>
       <input
         type="text"
-        placeholder="Ingredient (e.g., Tomate)"
+        placeholder="Ingrediente (ej: Tomate)"
         value={name}
         onChange={(e) => setName(e.target.value)}
         className={styles.input}

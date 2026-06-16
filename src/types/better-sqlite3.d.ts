@@ -5,12 +5,6 @@ declare module "better-sqlite3" {
     lastInsertRowid: number;
   }
 
-  export interface Statement {
-    run(...params: any[]): RunResult;
-    get(...params: any[]): any;
-    all(...params: any[]): any[];
-  }
-
   export default class BetterSqlite3 {
     constructor(path: string, options?: any);
     exec(sql: string): void;

@@ -1,7 +1,7 @@
 "use client";
 
 import { Recipe } from "@/lib/recipes";
-import { getIngredientImageSrc } from "@/lib/ingredientImage";
+import IngredientImage from "@/components/IngredientImage";
 import styles from "./RecipeCard.module.css";
 
 type RecipeCardProps = {
@@ -35,16 +35,11 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
         <ul>
           {recipe.ingredients.slice(0, 3).map((ing, idx) => (
             <li key={idx} className={styles.ingredientItem}>
-              {getIngredientImageSrc(ing.name) ? (
-                <img
-                  src={getIngredientImageSrc(ing.name) ?? ""}
-                  alt=""
-                  className={styles.ingredientImage}
-                  aria-hidden="true"
-                />
-              ) : (
-                <span className={styles.ingredientImagePlaceholder} aria-hidden="true" />
-              )}
+              <IngredientImage
+                name={ing.name}
+                className={styles.ingredientImage}
+                placeholderClassName={styles.ingredientImagePlaceholder}
+              />
               <span>{ing.name}</span>
             </li>
           ))}

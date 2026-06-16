@@ -37,7 +37,7 @@ export default function FridgePage() {
       const res = await fetch("/api/ingredients", {
         headers: { Authorization: `Bearer ${t}` },
       });
-      if (!res.ok) throw new Error("Failed to fetch");
+      if (!res.ok) throw new Error("Error al cargar ingredientes");
       const data = await res.json();
       setIngredients(data.ingredients);
     } catch (err) {
@@ -60,9 +60,15 @@ export default function FridgePage() {
         },
         body: JSON.stringify({ name, quantity, unit }),
       });
-      if (!res.ok) throw new Error("Failed to add");
+      if (!res.ok) throw new Error("Error al agregar ingrediente");
       const data = await res.json();
-      setIngredients([...ingredients, data.ingredient]);
+      setIngredients((prev) => {
+        const exists = prev.some((i) => i.id === data.ingredient.id);
+        if (exists) {
+          return prev.map((i) => (i.id === data.ingredient.id ? data.ingredient : i));
+        }
+        return [...prev, data.ingredient];
+      });
     } catch (err) {
       setError("Error al agregar ingrediente");
     } finally {
@@ -76,7 +82,7 @@ export default function FridgePage() {
     setError("");
     try {
       const ingredient = ingredients.find((i) => i.id === id);
-      if (!ingredient) throw new Error("Not found");
+      if (!ingredient) throw new Error("Ingrediente no encontrado");
       const res = await fetch("/api/ingredients", {
         method: "PUT",
         headers: {
@@ -85,7 +91,7 @@ export default function FridgePage() {
         },
         body: JSON.stringify({ id, name: ingredient.name, quantity, unit }),
       });
-      if (!res.ok) throw new Error("Failed to update");
+      if (!res.ok) throw new Error("Error al actualizar ingrediente");
       const data = await res.json();
       setIngredients(ingredients.map((i) => (i.id === id ? data.ingredient : i)));
     } catch (err) {
@@ -108,7 +114,7 @@ export default function FridgePage() {
         },
         body: JSON.stringify({ id }),
       });
-      if (!res.ok) throw new Error("Failed to delete");
+      if (!res.ok) throw new Error("Error al eliminar ingrediente");
       setIngredients(ingredients.filter((i) => i.id !== id));
     } catch (err) {
       setError("Error al eliminar ingrediente");
@@ -123,7 +129,7 @@ export default function FridgePage() {
     <main>
       <Card>
         <h1>Mi Refrigerador</h1>
-        <p>Gestiona los ingredientes disponibles en tu hogar</p>
+        <p>Agrega los ingredientes disponibles en tu hogar</p>
       </Card>
 
       <Card style={{ marginTop: "2rem" }}>

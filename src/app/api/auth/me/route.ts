@@ -36,7 +36,9 @@ export async function GET(req: Request) {
 
   const user = data as UserRow | null;
 
-  if (error || !user) return NextResponse.json({ error: "not found" }, { status: 404 });
+  if (error) return NextResponse.json({ error: "Error al cargar información del usuario" }, { status: 404 });
+
+  if (!user) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
 
   return NextResponse.json({ user });
 }

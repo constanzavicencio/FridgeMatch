@@ -1,7 +1,8 @@
 "use client";
 
 import { Recipe } from "@/lib/recipes";
-import { getIngredientImageSrc } from "@/lib/ingredientImage";
+import IngredientImage from "@/components/IngredientImage";
+import { decimalToFraction } from "@/lib/fractionConverter";
 import styles from "./RecipeDetail.module.css";
 
 type RecipeDetailProps = {
@@ -40,18 +41,13 @@ export default function RecipeDetail({ recipe, onClose }: RecipeDetailProps) {
           <ul className={styles.ingredientsList}>
             {recipe.ingredients.map((ing, idx) => (
               <li key={idx} className={styles.ingredientItem}>
-                {getIngredientImageSrc(ing.name) ? (
-                  <img
-                    src={getIngredientImageSrc(ing.name) ?? ""}
-                    alt=""
-                    className={styles.ingredientImage}
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <span className={styles.ingredientImagePlaceholder} aria-hidden="true" />
-                )}
+                <IngredientImage
+                  name={ing.name}
+                  className={styles.ingredientImage}
+                  placeholderClassName={styles.ingredientImagePlaceholder}
+                />
                 <span>
-                  <strong>{ing.quantity}</strong> {ing.unit} de {ing.name}
+                  <strong>{decimalToFraction(ing.quantity)}</strong> {ing.unit} de {ing.name}
                 </span>
               </li>
             ))}

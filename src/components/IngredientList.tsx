@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { getIngredientImageSrc } from "@/lib/ingredientImage";
+import { formatQuantity } from "@/lib/fractionConverter";
+import IngredientImage from "@/components/IngredientImage";
 import styles from "./IngredientList.module.css";
 
 type Ingredient = {
@@ -42,16 +43,11 @@ export default function IngredientList({ ingredients, onUpdate, onDelete }: Ingr
           {ingredients.map((ingr) => (
             <div key={ingr.id} className={styles.item}>
               <div className={styles.identity}>
-                {getIngredientImageSrc(ingr.name) ? (
-                  <img
-                    src={getIngredientImageSrc(ingr.name) ?? ""}
-                    alt=""
-                    className={styles.image}
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <span className={styles.imagePlaceholder} aria-hidden="true" />
-                )}
+                <IngredientImage
+                  name={ingr.name}
+                  className={styles.image}
+                  placeholderClassName={styles.imagePlaceholder}
+                />
                 <div className={styles.name}>{ingr.name}</div>
               </div>
               {editingId === ingr.id ? (
@@ -76,7 +72,7 @@ export default function IngredientList({ ingredients, onUpdate, onDelete }: Ingr
                 </div>
               ) : (
                 <div className={styles.info}>
-                  <span className={styles.qty}>{ingr.quantity} {ingr.unit}</span>
+                  <span className={styles.qty}>{formatQuantity(ingr.quantity, ingr.unit)}</span>
                   <button className={styles.edit} onClick={() => startEdit(ingr)}>Editar</button>
                   <button className={styles.delete} onClick={() => onDelete(ingr.id)}>Eliminar</button>
                 </div>

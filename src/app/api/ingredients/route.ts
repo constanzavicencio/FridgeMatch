@@ -56,8 +56,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const username = getUsername(req);
   if (!username) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    const supabase = getSupabase();
-    const ingredientsTable = supabase.from("ingredients") as any;
+  const supabase = getSupabase();
+  const ingredientsTable = supabase.from("ingredients") as any;
   
   const body = await req.json();
   const { name, quantity, unit } = body;
@@ -65,15 +65,60 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Se requieren nombre y cantidad" }, { status: 400 });
   }
 
-    const { data: ingredient, error } = await ingredientsTable
-      .insert({
-        username,
-        name,
-        quantity: parseFloat(quantity),
-        unit: unit || "unidad",
-      })
+  const parsedQuantity = parseFloat(quantity);
+  if (!Number.isFinite(parsedQuantity)) {
+    return NextResponse.json({ error: "Cantidad invalida" }, { status: 400 });
+  }
+
+  const normalizedName = String(name).trim();
+  const normalizedUnit = String(unit || "unidad").trim();
+
+  const { data: existing, error: existingError } = await ingredientsTable
+    .select("id, username, name, quantity, unit, created_at")
+    .eq("username", username)
+    .ilike("name", normalizedName)
+    .ilike("unit", normalizedUnit)
+    .order("id", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingError) {
+    return NextResponse.json({ error: "No se pudo guardar el ingrediente" }, { status: 500 });
+  }
+
+  if (existing) {
+    const { data: updated, error: updateError } = await ingredientsTable
+      .update({ quantity: Number(existing.quantity) + parsedQuantity })
+      .eq("id", Number(existing.id))
+      .eq("username", username)
       .select("id, username, name, quantity, unit, created_at")
       .single();
+
+    if (updateError || !updated) {
+      return NextResponse.json({ error: "No se pudo guardar el ingrediente" }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      ingredient: {
+        id: updated.id,
+        username: updated.username,
+        name: updated.name,
+        quantity: Number(updated.quantity),
+        unit: updated.unit,
+        createdAt: updated.created_at,
+      },
+    });
+  }
+
+  const { data: ingredient, error } = await ingredientsTable
+    .insert({
+      username,
+      name: normalizedName,
+      quantity: parsedQuantity,
+      unit: normalizedUnit,
+    })
+    .select("id, username, name, quantity, unit, created_at")
+    .single();
 
   if (error || !ingredient) {
     return NextResponse.json({ error: "No se pudo guardar el ingrediente" }, { status: 500 });
