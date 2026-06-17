@@ -33,4 +33,5 @@ export type RecipeRecord = {
   ratingsCount: number;
   isFavorite: boolean;
   myRating: RecipeRating | null;
+  imageUrl?: string | null;
 };

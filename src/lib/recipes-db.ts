@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getRecipeImageUrlsMap } from "@/lib/supabase/recipe-images";
 import type {
   RecipeDifficulty,
   RecipeIngredientItem,
@@ -184,6 +185,8 @@ export async function getRecipesWithUserData(options?: {
 
   const favoriteRecipeIds = new Set(favoriteRows.map((row) => Number(row.recipe_id)));
 
+  const imageUrlsMap = await getRecipeImageUrlsMap(recipeRows.map((row) => row.title));
+
   const recipes = recipeRows.map((row): RecipeRecord => {
     const recipeRatings = ratingsByRecipe.get(row.id) ?? [];
     const ratingsCount = recipeRatings.length;
@@ -226,6 +229,7 @@ export async function getRecipesWithUserData(options?: {
       ratingsCount,
       isFavorite: favoriteRecipeIds.has(row.id),
       myRating,
+      imageUrl: imageUrlsMap.get(row.title) ?? null,
     };
   });
 

@@ -43,6 +43,9 @@ export default function AdminRecipesPage() {
   const [servings, setServings] = useState("2");
   const [rows, setRows] = useState<RecipeIngredientInput[]>([emptyRow()]);
   const router = useRouter();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [imageError, setImageError] = useState<string>("");
 
   const ingredientMap = useMemo(() => {
     return new Map(ingredients.map((item) => [item.id, item]));
@@ -108,6 +111,7 @@ export default function AdminRecipesPage() {
     event.preventDefault();
     setSaving(true);
     setError("");
+    setImageError("");
 
     try {
       const payload = {
@@ -144,11 +148,59 @@ export default function AdminRecipesPage() {
       setTimeMinutes("30");
       setServings("2");
       setRows([emptyRow()]);
+      setImageFile(null);
+      setImagePreview("");
+      setImageError("");
+
+      // Sube la imagen si se seleccionó una (no bloquea la publicación)
+      if (imageFile) {
+        const fd = new FormData();
+        fd.append("title", title);
+        fd.append("image", imageFile);
+        const imgRes = await fetch("/api/admin/recipe-image", {
+          method: "POST",
+          credentials: "include",
+          body: fd,
+        });
+        if (!imgRes.ok) {
+          const imgData = await imgRes.json().catch(() => ({}));
+          setImageError(imgData.error || "La receta se publicó pero la imagen no se pudo subir");
+        }
+      }
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "No se pudo crear la receta");
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0] ?? null;
+    setImageFile(file);
+    setImageError("");
+
+    if (!file) {
+      setImagePreview("");
+      return;
+    }
+
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      setImageError("Solo se permiten imágenes JPG o PNG");
+      setImageFile(null);
+      setImagePreview("");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setImageError("La imagen no puede superar 2 MB");
+      setImageFile(null);
+      setImagePreview("");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => setImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
   }
 
   if (loading) {
@@ -193,6 +245,27 @@ export default function AdminRecipesPage() {
               rows={6}
               style={{ width: "100%" }}
             />
+          </label>
+
+          <label>
+            <strong>Imagen de la receta</strong>
+            <small style={{ display: "block", color: "var(--muted)", marginBottom: "0.4rem" }}>
+              JPG o PNG · máx. 2 MB · el nombre se genera automáticamente del título
+            </small>
+            <input
+              type="file"
+              accept="image/jpeg,image/png"
+              onChange={handleImageChange}
+              style={{ width: "100%" }}
+            />
+            {imagePreview && (
+              <img
+                src={imagePreview}
+                alt="Vista previa"
+                style={{ marginTop: "0.5rem", maxHeight: "180px", borderRadius: "8px", objectFit: "cover" }}
+              />
+            )}
+            {imageError && <p style={{ color: "#b00020", margin: "0.25rem 0 0" }}>{imageError}</p>}
           </label>
 
           <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>

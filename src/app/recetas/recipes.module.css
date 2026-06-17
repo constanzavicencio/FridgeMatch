@@ -1,3 +1,74 @@
+.carouselCard {
+  padding: 0rem;
+}
+
+.carouselViewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1376 / 267;
+  max-height: 320px;
+  min-height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #dcebd9;
+}
+
+.carouselImage {
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 420ms ease;
+}
+
+.carouselImageActive {
+  opacity: 1;
+}
+
+.carouselOverlay {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(36, 96, 64, 0.22);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+}
+
+.carouselTitle {
+  margin: 0;
+  font-weight: 800;
+  color: var(--jumbo-green-dark);
+}
+
+.carouselSubtitle {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.carouselDots {
+  margin-top: 0.8rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(36, 96, 64, 0.25);
+  cursor: pointer;
+}
+
+.dotActive {
+  background: var(--jumbo-green-light);
+}
+
+.filterCard {
+  border: 1px solid rgba(36, 96, 64, 0.14);
+}
+
 .filterContainer {
   display: flex;
   flex-direction: column;
@@ -16,10 +87,10 @@
 
 .filterBtn {
   padding: 0.6rem 1rem;
-  border: 2px solid var(--jumbo-green);
+  border: 1px solid var(--jumbo-green);
   background: transparent;
   color: var(--jumbo-green);
-  border-radius: 8px;
+  border-radius: 999px;
   cursor: pointer;
   font-weight: 600;
   transition: all 150ms ease;

@@ -1,9 +1,9 @@
 "use client";
 
 import type { RecipeRecord } from "@/lib/recipe-types";
-import IngredientImage from "@/components/IngredientImage";
 import styles from "./RecipeCard.module.css";
 import { RecipeRating } from "@/components/RecipeRating";
+import Image from "next/image";
 
 type RecipeCardProps = {
   recipe: RecipeRecord;
@@ -22,12 +22,24 @@ export default function RecipeCard({
   onClick,
   onToggleFavorite,
 }: RecipeCardProps) {
-  const visibleIngredients = recipe.ingredients.slice(0, 3);
-  const emptyIngredientRows = Math.max(0, 3 - visibleIngredients.length);
-  const hasMoreIngredients = recipe.ingredients.length > 3;
-
   return (
     <div className={styles.card} onClick={() => onClick?.(recipe)}>
+      <div className={styles.imageWrap}>
+        {recipe.imageUrl ? (
+          <Image
+            src={recipe.imageUrl}
+            alt={recipe.title}
+            fill
+            className={styles.recipeImage}
+            sizes="(max-width: 640px) 100vw, 320px"
+          />
+        ) : (
+          <div className={styles.imagePlaceholder} aria-hidden="true">
+            <i className="fa-solid fa-utensils"></i>
+          </div>
+        )}
+      </div>
+
       <div className={styles.header}>
         <h3>{recipe.title}</h3>
 
@@ -49,42 +61,12 @@ export default function RecipeCard({
         <div className={styles.metaItem}>
           <i className="fa-solid fa-user-group"></i> {recipe.servings} porciones
         </div>
-      </div>
 
-      <div className={styles.ingredients}>
-        <strong>Ingredientes:</strong>
-
-        <ul>
-          {visibleIngredients.map((ing, idx) => (
-            <li key={`${ing.productId}-${idx}`} className={styles.ingredientItem}>
-              <IngredientImage
-                name={ing.name}
-                className={styles.ingredientImage}
-                placeholderClassName={styles.ingredientImagePlaceholder}
-              />
-
-              <span>{ing.name}</span>
-            </li>
-          ))}
-
-          {Array.from({ length: emptyIngredientRows }).map((_, idx) => (
-            <li
-              key={`ingredient-empty-${idx}`}
-              className={`${styles.ingredientItem} ${styles.ingredientItemEmpty}`}
-              aria-hidden="true"
-            >
-              <span>&nbsp;</span>
-            </li>
-          ))}
-
-          {hasMoreIngredients ? (
-            <li className={styles.moreIngredients}>+{recipe.ingredients.length - 3} más</li>
-          ) : (
-            <li className={styles.moreIngredientsPlaceholder} aria-hidden="true">
-              &nbsp;
-            </li>
-          )}
-        </ul>
+        <div className={styles.metaItem}>
+          <i className="fa-solid fa-carrot"></i>{" "}
+          {recipe.ingredients.length}{" "}
+          {recipe.ingredients.length === 1 ? "ingrediente" : "ingredientes"}
+        </div>
       </div>
 
       {onToggleFavorite && (

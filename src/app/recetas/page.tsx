@@ -1,11 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Card from "@/components/Card";
 import RecipeCard from "@/components/RecipeCard";
 import RecipeDetail from "@/components/RecipeDetail";
 import type { RecipeDifficulty, RecipeRecord } from "@/lib/recipe-types";
 import styles from "./recipes.module.css";
+
+const carouselImages = [
+  "/carrusel/recetas.jpg",
+  "/carrusel/charquican.jpg",
+  "/carrusel/kuchen.jpg",
+  "/carrusel/machas.jpg",
+  "/carrusel/tarta.jpg",
+];
 
 export default function RecipesPage() {
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeRecord | null>(null);
@@ -14,6 +23,7 @@ export default function RecipesPage() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | RecipeDifficulty>("all");
   const [canToggleFavorite, setCanToggleFavorite] = useState(false);
+  const [activeSlide, setActiveSlide] = useState(0);
 
   async function loadSessionRole() {
     try {
@@ -62,6 +72,14 @@ export default function RecipesPage() {
     loadRecipes();
   }, []);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % carouselImages.length);
+    }, 10000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
   async function toggleFavorite(recipe: RecipeRecord) {
     const method = recipe.isFavorite ? "DELETE" : "POST";
     const res = await fetch(`/api/recipes/${recipe.id}/favorite`, {
@@ -89,12 +107,39 @@ export default function RecipesPage() {
 
   return (
     <main>
+      <Card className={styles.carouselCard}>
+        <div className={styles.carouselViewport}>
+          {carouselImages.map((src, index) => (
+            <Image
+              key={src}
+              src={src}
+              alt={`Receta destacada ${index + 1}`}
+              fill
+              priority={index === 0}
+              className={`${styles.carouselImage} ${index === activeSlide ? styles.carouselImageActive : ""}`}
+            />
+          ))}
+        </div>
+
+        <div className={styles.carouselDots}>
+          {carouselImages.map((_, index) => (
+            <button
+              key={`dot-${index}`}
+              type="button"
+              aria-label={`Ir al slide ${index + 1}`}
+              className={`${styles.dot} ${index === activeSlide ? styles.dotActive : ""}`}
+              onClick={() => setActiveSlide(index)}
+            />
+          ))}
+        </div>
+      </Card>
+
       <Card>
         <h1>Nuestras Recetas</h1>
         <p>Descubre recetas creadas por la comunidad y guarda tus favoritas.</p>
       </Card>
 
-      <Card style={{ marginTop: "2rem" }}>
+      <Card className={styles.filterCard} style={{ marginTop: "2rem" }}>
         <div className={styles.filterContainer}>
           <strong>Filtrar por dificultad:</strong>
           <div className={styles.filters}>
