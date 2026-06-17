@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import { getIngredientImageSrc } from "@/lib/ingredientImage";
 
 type IngredientImageProps = {
   name: string;
+  imageUrl?: string | null;
   className?: string;
   placeholderClassName?: string;
   alt?: string;
@@ -15,6 +14,7 @@ type IngredientImageProps = {
 
 export default function IngredientImage({
   name,
+  imageUrl,
   className,
   placeholderClassName,
   alt = "",
@@ -22,22 +22,23 @@ export default function IngredientImage({
   height = 32,
 }: IngredientImageProps) {
   const [failed, setFailed] = useState(false);
-  console.log(`Recuperando ingrediente: ${name}`)
-  const src = getIngredientImageSrc(name);
+
+  const src = imageUrl || `/api/ingredients/${encodeURIComponent(name)}`;
 
   if (!src || failed) {
     return <span className={placeholderClassName} aria-hidden="true" />;
   }
 
   return (
-    <Image
+    <img
       src={src}
-      alt={alt}
+      alt={alt || name}
       className={className}
       width={width}
       height={height}
       aria-hidden={alt === ""}
       onError={() => setFailed(true)}
+      style={{ objectFit: "contain" }}
     />
   );
 }

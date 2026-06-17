@@ -11,13 +11,24 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("fm_token");
-    if (token) {
-      router.replace("/sesion");
-      return;
+    async function checkSession() {
+      try {
+        const res = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        if (res.ok) {
+          router.replace("/sesion");
+          return;
+        }
+      } finally {
+        setReady(true);
+      }
     }
 
-    setReady(true);
+    checkSession();
   }, [router]);
 
   if (!ready) {

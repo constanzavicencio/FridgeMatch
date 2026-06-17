@@ -1,197 +1,275 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
-import { getSupabase } from "@/lib/supabase-server";
+import { getSessionUser } from "@/lib/auth/session";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getIngredientSignedImageUrl } from "@/lib/supabase/ingredient-images";
 
-const SECRET = process.env.AUTH_SECRET || "dev-secret";
+type IngredientRow = {
+  id: number;
+  username: string;
+  name: string;
+  quantity: number | string;
+  unit: string;
+  created_at: string;
+};
 
-function verifyToken(token: string) {
-  try {
-    const decoded = Buffer.from(token, "base64").toString("utf-8");
-    const [username, ts, sig] = decoded.split(":");
-    const payload = `${username}:${ts}`;
-    const expected = crypto.createHmac("sha256", SECRET).update(payload).digest("hex");
-    if (expected !== sig) return null;
-    return username;
-  } catch (e) {
-    return null;
+type CatalogRow = {
+  name: string;
+  image_path: string | null;
+};
+
+async function formatIngredient(
+  ingredient: IngredientRow,
+  catalogByName: Map<string, CatalogRow>
+) {
+  const catalog = catalogByName.get(ingredient.name.toLowerCase());
+  const imagePath = catalog?.image_path ?? null;
+
+  return {
+    id: ingredient.id,
+    username: ingredient.username,
+    name: ingredient.name,
+    quantity: Number(ingredient.quantity),
+    unit: ingredient.unit,
+    createdAt: ingredient.created_at,
+    imagePath,
+    imageUrl: await getIngredientSignedImageUrl(imagePath),
+  };
+}
+
+async function getCatalogByNames(names: string[]) {
+  const supabase = createSupabaseAdminClient();
+
+  if (names.length === 0) {
+    return new Map<string, CatalogRow>();
   }
+
+  const { data } = await supabase
+    .from("ingredient_catalog")
+    .select("name, image_path")
+    .in("name", names);
+
+  const catalogByName = new Map<string, CatalogRow>();
+
+  for (const item of (data ?? []) as CatalogRow[]) {
+    catalogByName.set(item.name.toLowerCase(), item);
+  }
+
+  return catalogByName;
 }
 
-function getUsername(req: Request) {
-  const auth = req.headers.get("authorization") || "";
-  if (!auth.startsWith("Bearer ")) return null;
-  const token = auth.replace("Bearer ", "");
-  return verifyToken(token);
-}
+export async function GET() {
+  const sessionUser = await getSessionUser();
 
-export async function GET(req: Request) {
-  const username = getUsername(req);
-  if (!username) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!sessionUser) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
 
-    const supabase = getSupabase();
-    const ingredientsTable = supabase.from("ingredients") as any;
-    const { data: ingredients, error } = await ingredientsTable
-      .select("id, username, name, quantity, unit, created_at")
-      .eq("username", username)
-      .order("id", { ascending: true });
+  const supabase = createSupabaseAdminClient();
+
+  const { data, error } = await supabase
+    .from("ingredients")
+    .select("id, username, name, quantity, unit, created_at")
+    .eq("username", sessionUser.username)
+    .order("id", { ascending: true });
 
   if (error) {
-    return NextResponse.json({ error: "No se pudieron cargar los ingredientes" }, { status: 500 });
+    return NextResponse.json(
+      { error: "No se pudieron cargar los ingredientes" },
+      { status: 500 }
+    );
   }
 
-  const rows = (ingredients ?? []) as any[];
+  const rows = (data ?? []) as IngredientRow[];
+  const names = [...new Set(rows.map((ingredient) => ingredient.name))];
+  const catalogByName = await getCatalogByNames(names);
+  const formattedRows = await Promise.all(
+    rows.map((ingredient) => formatIngredient(ingredient, catalogByName))
+  );
 
   return NextResponse.json({
-    ingredients: rows.map((ingredient) => ({
-      id: ingredient.id,
-      username: ingredient.username,
-      name: ingredient.name,
-      quantity: Number(ingredient.quantity),
-      unit: ingredient.unit,
-      createdAt: ingredient.created_at,
-    })),
+    ingredients: formattedRows,
   });
 }
 
 export async function POST(req: Request) {
-  const username = getUsername(req);
-  if (!username) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const supabase = getSupabase();
-  const ingredientsTable = supabase.from("ingredients") as any;
-  
+  const sessionUser = await getSessionUser();
+
+  if (!sessionUser) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   const body = await req.json();
-  const { name, quantity, unit } = body;
-  if (!name || quantity === undefined) {
-    return NextResponse.json({ error: "Se requieren nombre y cantidad" }, { status: 400 });
+  const name = String(body.name || "").trim();
+  const unit = String(body.unit || "unidad").trim();
+  const parsedQuantity = Number(body.quantity);
+
+  if (!name || body.quantity === undefined) {
+    return NextResponse.json(
+      { error: "Se requieren nombre y cantidad" },
+      { status: 400 }
+    );
   }
 
-  const parsedQuantity = parseFloat(quantity);
   if (!Number.isFinite(parsedQuantity)) {
-    return NextResponse.json({ error: "Cantidad invalida" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Cantidad inválida" },
+      { status: 400 }
+    );
   }
 
-  const normalizedName = String(name).trim();
-  const normalizedUnit = String(unit || "unidad").trim();
+  const supabase = createSupabaseAdminClient();
 
-  const { data: existing, error: existingError } = await ingredientsTable
+  const { data: existing, error: existingError } = await supabase
+    .from("ingredients")
     .select("id, username, name, quantity, unit, created_at")
-    .eq("username", username)
-    .ilike("name", normalizedName)
-    .ilike("unit", normalizedUnit)
+    .eq("username", sessionUser.username)
+    .ilike("name", name)
+    .ilike("unit", unit)
     .order("id", { ascending: true })
     .limit(1)
     .maybeSingle();
 
   if (existingError) {
-    return NextResponse.json({ error: "No se pudo guardar el ingrediente" }, { status: 500 });
+    return NextResponse.json(
+      { error: "No se pudo guardar el ingrediente" },
+      { status: 500 }
+    );
   }
 
+  let savedIngredient: IngredientRow | null = null;
+
   if (existing) {
-    const { data: updated, error: updateError } = await ingredientsTable
+    const { data: updated, error: updateError } = await supabase
+      .from("ingredients")
       .update({ quantity: Number(existing.quantity) + parsedQuantity })
       .eq("id", Number(existing.id))
-      .eq("username", username)
+      .eq("username", sessionUser.username)
       .select("id, username, name, quantity, unit, created_at")
       .single();
 
     if (updateError || !updated) {
-      return NextResponse.json({ error: "No se pudo guardar el ingrediente" }, { status: 500 });
+      return NextResponse.json(
+        { error: "No se pudo guardar el ingrediente" },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({
-      ingredient: {
-        id: updated.id,
-        username: updated.username,
-        name: updated.name,
-        quantity: Number(updated.quantity),
-        unit: updated.unit,
-        createdAt: updated.created_at,
-      },
-    });
+    savedIngredient = updated as IngredientRow;
+  } else {
+    const { data: ingredient, error } = await supabase
+      .from("ingredients")
+      .insert({
+        username: sessionUser.username,
+        name,
+        quantity: parsedQuantity,
+        unit,
+      })
+      .select("id, username, name, quantity, unit, created_at")
+      .single();
+
+    if (error || !ingredient) {
+      return NextResponse.json(
+        { error: "No se pudo guardar el ingrediente" },
+        { status: 500 }
+      );
+    }
+
+    savedIngredient = ingredient as IngredientRow;
   }
 
-  const { data: ingredient, error } = await ingredientsTable
-    .insert({
-      username,
-      name: normalizedName,
-      quantity: parsedQuantity,
-      unit: normalizedUnit,
-    })
-    .select("id, username, name, quantity, unit, created_at")
-    .single();
+  const catalogByName = await getCatalogByNames([savedIngredient.name]);
 
-  if (error || !ingredient) {
-    return NextResponse.json({ error: "No se pudo guardar el ingrediente" }, { status: 500 });
-  }
-
-  return NextResponse.json({
-    ingredient: {
-      id: ingredient.id,
-      username: ingredient.username,
-      name: ingredient.name,
-      quantity: Number(ingredient.quantity),
-      unit: ingredient.unit,
-      createdAt: ingredient.created_at,
+  return NextResponse.json(
+    {
+      ingredient: await formatIngredient(savedIngredient, catalogByName),
     },
-  }, { status: 201 });
+    { status: existing ? 200 : 201 }
+  );
 }
 
 export async function PUT(req: Request) {
-  const username = getUsername(req);
-  if (!username) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    const supabase = getSupabase();
-    const ingredientsTable = supabase.from("ingredients") as any;
-  
-  const body = await req.json();
-  const { id, name, quantity, unit } = body;
-  if (!id) return NextResponse.json({ error: "Se requiere id" }, { status: 400 });
+  const sessionUser = await getSessionUser();
 
-  const updates: Record<string, unknown> = {};
-  if (name !== undefined) updates.name = name;
-  if (quantity !== undefined) updates.quantity = parseFloat(quantity);
-  if (unit !== undefined) updates.unit = unit;
-
-    const { data: ingredient, error } = await ingredientsTable
-      .update(updates)
-      .eq("id", Number(id))
-      .eq("username", username)
-      .select("id, username, name, quantity, unit, created_at")
-      .maybeSingle();
-
-  if (error || !ingredient) {
-    return NextResponse.json({ error: "ingredient not found" }, { status: 404 });
+  if (!sessionUser) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  const body = await req.json();
+  const { id, name, quantity, unit } = body;
+
+  if (!id) {
+    return NextResponse.json({ error: "Se requiere id" }, { status: 400 });
+  }
+
+  const updates: Record<string, unknown> = {};
+
+  if (name !== undefined) updates.name = String(name).trim();
+  if (quantity !== undefined) updates.quantity = Number(quantity);
+  if (unit !== undefined) updates.unit = String(unit).trim();
+
+  if (
+    updates.quantity !== undefined &&
+    !Number.isFinite(Number(updates.quantity))
+  ) {
+    return NextResponse.json(
+      { error: "Cantidad inválida" },
+      { status: 400 }
+    );
+  }
+
+  const supabase = createSupabaseAdminClient();
+
+  const { data: ingredient, error } = await supabase
+    .from("ingredients")
+    .update(updates)
+    .eq("id", Number(id))
+    .eq("username", sessionUser.username)
+    .select("id, username, name, quantity, unit, created_at")
+    .maybeSingle();
+
+  if (error || !ingredient) {
+    return NextResponse.json(
+      { error: "ingredient not found" },
+      { status: 404 }
+    );
+  }
+
+  const row = ingredient as IngredientRow;
+  const catalogByName = await getCatalogByNames([row.name]);
+
   return NextResponse.json({
-    ingredient: {
-      id: ingredient.id,
-      username: ingredient.username,
-      name: ingredient.name,
-      quantity: Number(ingredient.quantity),
-      unit: ingredient.unit,
-      createdAt: ingredient.created_at,
-    },
+    ingredient: await formatIngredient(row, catalogByName),
   });
 }
 
 export async function DELETE(req: Request) {
-  const username = getUsername(req);
-  if (!username) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    const supabase = getSupabase();
-    const ingredientsTable = supabase.from("ingredients") as any;
-  
+  const sessionUser = await getSessionUser();
+
+  if (!sessionUser) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   const body = await req.json();
   const { id } = body;
-  if (!id) return NextResponse.json({ error: "Se requiere id" }, { status: 400 });
 
-    const { data, error } = await ingredientsTable
-      .delete()
-      .eq("id", Number(id))
-      .eq("username", username)
-      .select("id");
+  if (!id) {
+    return NextResponse.json({ error: "Se requiere id" }, { status: 400 });
+  }
+
+  const supabase = createSupabaseAdminClient();
+
+  const { data, error } = await supabase
+    .from("ingredients")
+    .delete()
+    .eq("id", Number(id))
+    .eq("username", sessionUser.username)
+    .select("id");
 
   if (error || !data || data.length === 0) {
-    return NextResponse.json({ error: "ingredient not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "ingredient not found" },
+      { status: 404 }
+    );
   }
 
   return NextResponse.json({ success: true });

@@ -1,17 +1,11 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { getSupabase } from "@/lib/supabase-server";
-
-const SECRET = process.env.AUTH_SECRET || "dev-secret";
+import bcrypt from "bcrypt";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { setSessionCookie } from "@/lib/auth/session";
 
 function hashPassword(password: string) {
   return crypto.createHash("sha256").update(password).digest("hex");
-}
-
-function makeToken(username: string) {
-  const payload = `${username}:${Date.now()}`;
-  const sig = crypto.createHmac("sha256", SECRET).update(payload).digest("hex");
-  return Buffer.from(`${payload}:${sig}`).toString("base64");
 }
 
 type UserRow = {
@@ -22,35 +16,82 @@ type UserRow = {
 };
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const { username, password } = body;
-  if (!username || !password) {
-    return NextResponse.json({ error: "Se requieren usuario y contraseña" }, { status: 400 });
+  try {
+    const body = await req.json();
+
+    const username = String(body.username || "").trim();
+    const password = String(body.password || "");
+
+    if (!username || !password) {
+      return NextResponse.json(
+        { error: "Se requieren usuario y contraseña" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createSupabaseAdminClient();
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, username, password_hash, role")
+      .eq("username", username)
+      .maybeSingle();
+
+    const user = data as UserRow | null;
+
+    if (error || !user) {
+      return NextResponse.json(
+        { error: "Usuario o contraseña incorrectos" },
+        { status: 401 }
+      );
+    }
+
+    let validPassword = false;
+    let shouldUpgradeHash = false;
+
+    if (user.password_hash.startsWith("$2")) {
+      validPassword = await bcrypt.compare(password, user.password_hash);
+    } else {
+      validPassword = user.password_hash === hashPassword(password);
+      shouldUpgradeHash = validPassword;
+    }
+
+    if (!validPassword) {
+      return NextResponse.json(
+        { error: "Usuario o contraseña incorrectos" },
+        { status: 401 }
+      );
+    }
+
+    if (shouldUpgradeHash) {
+      const upgradedHash = await bcrypt.hash(password, 12);
+      await supabase
+        .from("users")
+        .update({ password_hash: upgradedHash })
+        .eq("id", user.id);
+    }
+
+    await setSessionCookie({
+      username: user.username,
+      role: user.role,
+    });
+
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Login route error:", error);
+
+    return NextResponse.json(
+      {
+        error: "Error interno en login",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
   }
-
-  const supabase = getSupabase();
-
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, username, password_hash, role")
-    .eq("username", username)
-    .maybeSingle();
-
-  const user = data as UserRow | null;
-
-  if (error || !user) {
-    return NextResponse.json({ error: "Error al iniciar sesión" }, { status: 401 });
-  }
-
-  if (!user) {
-    return NextResponse.json({ error: "Usuario no encontrado" }, { status: 401 });
-  }
-
-  if (user.password_hash !== hashPassword(password)) {
-    return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });
-  }
-
-  const token = makeToken(username);
-  const safe = { id: user.id, username: user.username, role: user.role };
-  return NextResponse.json({ token, user: safe });
 }

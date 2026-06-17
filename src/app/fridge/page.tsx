@@ -11,36 +11,53 @@ type Ingredient = {
   name: string;
   quantity: number;
   unit: string;
+  imagePath?: string | null;
+  imageUrl?: string | null;
 };
 
 export default function FridgePage() {
-  const [token, setToken] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
   useEffect(() => {
-    const t = localStorage.getItem("fm_token");
-    if (!t) {
-      router.push("/login");
-      return;
+    async function checkSessionAndLoad() {
+      try {
+        const sessionRes = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!sessionRes.ok) {
+          router.push("/login");
+          return;
+        }
+
+        await fetchIngredients();
+      } finally {
+        setCheckingSession(false);
+      }
     }
-    setToken(t);
-    fetchIngredients(t);
+
+    checkSessionAndLoad();
   }, [router]);
 
-  async function fetchIngredients(t: string) {
+  async function fetchIngredients() {
     setLoading(true);
     setError("");
+
     try {
       const res = await fetch("/api/ingredients", {
-        headers: { Authorization: `Bearer ${t}` },
+        credentials: "include",
       });
+
       if (!res.ok) throw new Error("Error al cargar ingredientes");
+
       const data = await res.json();
       setIngredients(data.ingredients);
-    } catch (err) {
+    } catch {
       setError("Error al cargar ingredientes");
     } finally {
       setLoading(false);
@@ -48,28 +65,35 @@ export default function FridgePage() {
   }
 
   async function handleAdd(name: string, quantity: number, unit: string) {
-    if (!token) return;
     setLoading(true);
     setError("");
+
     try {
       const res = await fetch("/api/ingredients", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ name, quantity, unit }),
       });
+
       if (!res.ok) throw new Error("Error al agregar ingrediente");
+
       const data = await res.json();
+
       setIngredients((prev) => {
         const exists = prev.some((i) => i.id === data.ingredient.id);
+
         if (exists) {
-          return prev.map((i) => (i.id === data.ingredient.id ? data.ingredient : i));
+          return prev.map((i) =>
+            i.id === data.ingredient.id ? data.ingredient : i
+          );
         }
+
         return [...prev, data.ingredient];
       });
-    } catch (err) {
+    } catch {
       setError("Error al agregar ingrediente");
     } finally {
       setLoading(false);
@@ -77,24 +101,38 @@ export default function FridgePage() {
   }
 
   async function handleUpdate(id: number, quantity: number, unit: string) {
-    if (!token) return;
     setLoading(true);
     setError("");
+
     try {
       const ingredient = ingredients.find((i) => i.id === id);
-      if (!ingredient) throw new Error("Ingrediente no encontrado");
+
+      if (!ingredient) {
+        throw new Error("Ingrediente no encontrado");
+      }
+
       const res = await fetch("/api/ingredients", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ id, name: ingredient.name, quantity, unit }),
+        credentials: "include",
+        body: JSON.stringify({
+          id,
+          name: ingredient.name,
+          quantity,
+          unit,
+        }),
       });
+
       if (!res.ok) throw new Error("Error al actualizar ingrediente");
+
       const data = await res.json();
-      setIngredients(ingredients.map((i) => (i.id === id ? data.ingredient : i)));
-    } catch (err) {
+
+      setIngredients((prev) =>
+        prev.map((i) => (i.id === id ? data.ingredient : i))
+      );
+    } catch {
       setError("Error al actualizar ingrediente");
     } finally {
       setLoading(false);
@@ -102,28 +140,30 @@ export default function FridgePage() {
   }
 
   async function handleDelete(id: number) {
-    if (!token) return;
     setLoading(true);
     setError("");
+
     try {
       const res = await fetch("/api/ingredients", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ id }),
       });
+
       if (!res.ok) throw new Error("Error al eliminar ingrediente");
-      setIngredients(ingredients.filter((i) => i.id !== id));
-    } catch (err) {
+
+      setIngredients((prev) => prev.filter((i) => i.id !== id));
+    } catch {
       setError("Error al eliminar ingrediente");
     } finally {
       setLoading(false);
     }
   }
 
-  if (!token) return <div>Cargando...</div>;
+  if (checkingSession) return <div>Cargando...</div>;
 
   return (
     <main>
@@ -137,7 +177,12 @@ export default function FridgePage() {
       </Card>
 
       <Card style={{ marginTop: "2rem" }}>
-        {error && <div style={{ color: "crimson", marginBottom: "1rem" }}>{error}</div>}
+        {error && (
+          <div style={{ color: "crimson", marginBottom: "1rem" }}>
+            {error}
+          </div>
+        )}
+
         <IngredientList
           ingredients={ingredients}
           onUpdate={handleUpdate}

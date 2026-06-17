@@ -1,7 +1,7 @@
 "use client";
 
+import type { SyntheticEvent } from "react";
 import { useState } from "react";
-
 import styles from "./IngredientForm.module.css";
 
 type IngredientFormProps = {
@@ -9,15 +9,21 @@ type IngredientFormProps = {
   isLoading?: boolean;
 };
 
-export default function IngredientForm({ onAdd, isLoading }: IngredientFormProps) {
+export default function IngredientForm({
+  onAdd,
+  isLoading,
+}: IngredientFormProps) {
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [unit, setUnit] = useState("kg");
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+
     if (!name.trim()) return;
-    onAdd(name, parseFloat(quantity) || 1, unit);
+
+    onAdd(name.trim(), parseFloat(quantity) || 1, unit);
+
     setName("");
     setQuantity("1");
     setUnit("kg");
@@ -32,6 +38,7 @@ export default function IngredientForm({ onAdd, isLoading }: IngredientFormProps
         onChange={(e) => setName(e.target.value)}
         className={styles.input}
       />
+
       <input
         type="number"
         placeholder="Cantidad"
@@ -41,7 +48,12 @@ export default function IngredientForm({ onAdd, isLoading }: IngredientFormProps
         step="0.1"
         className={styles.input}
       />
-      <select value={unit} onChange={(e) => setUnit(e.target.value)} className={styles.input}>
+
+      <select
+        value={unit}
+        onChange={(e) => setUnit(e.target.value)}
+        className={styles.input}
+      >
         <option value="kg">kg</option>
         <option value="g">g</option>
         <option value="L">L</option>
@@ -49,6 +61,7 @@ export default function IngredientForm({ onAdd, isLoading }: IngredientFormProps
         <option value="unidad">unidad</option>
         <option value="docena">docena</option>
       </select>
+
       <button type="submit" disabled={isLoading}>
         {isLoading ? "Agregando..." : "Agregar"}
       </button>

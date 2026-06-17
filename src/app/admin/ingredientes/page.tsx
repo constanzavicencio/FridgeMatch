@@ -62,33 +62,44 @@ export default function AdminIngredientsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("fm_token");
-    const rawUser = localStorage.getItem("fm_token_user");
+    async function checkSessionAndLoad() {
+      try {
+        const sessionRes = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
 
-    if (!token || !rawUser) {
-      router.push("/login");
-      return;
-    }
+        if (!sessionRes.ok) {
+          router.push("/login");
+          return;
+        }
 
-    try {
-      const parsedUser = JSON.parse(rawUser) as User;
-      if (parsedUser.role !== "admin") {
-        router.push("/sesion");
-        return;
+        const sessionBody = await sessionRes.json();
+        const currentUser = (sessionBody.user ?? null) as User | null;
+
+        if (!currentUser || currentUser.role !== "admin") {
+          router.push("/sesion");
+          return;
+        }
+
+        setUser(currentUser);
+        await loadIngredients();
+      } catch {
+        router.push("/login");
+      } finally {
+        setLoading(false);
       }
-
-      setUser(parsedUser);
-      loadIngredients(token);
-    } catch {
-      router.push("/login");
     }
+
+    checkSessionAndLoad();
   }, [router]);
 
-  async function loadIngredients(token: string) {
+  async function loadIngredients() {
     setError("");
     try {
       const res = await fetch("/api/admin/ingredients", {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
       });
 
       if (!res.ok) throw new Error("No se pudo cargar el catálogo");
@@ -97,8 +108,6 @@ export default function AdminIngredientsPage() {
       setIngredients(data.ingredients ?? []);
     } catch {
       setError("No se pudo cargar el catálogo de ingredientes");
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -138,8 +147,6 @@ export default function AdminIngredientsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const token = localStorage.getItem("fm_token");
-    if (!token) return;
 
     const normalizedName = name.trim();
     if (!normalizedName) {
@@ -174,9 +181,7 @@ export default function AdminIngredientsPage() {
 
       const res = await fetch("/api/admin/ingredients", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
         body: formData,
       });
 
