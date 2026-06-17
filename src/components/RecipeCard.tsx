@@ -30,6 +30,7 @@ export default function RecipeCard({
             src={recipe.imageUrl}
             alt={recipe.title}
             fill
+            unoptimized
             className={styles.recipeImage}
             sizes="(max-width: 640px) 100vw, 320px"
           />
