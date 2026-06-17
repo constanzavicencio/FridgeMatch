@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Card from "@/components/Card";
-
-type User = {
-  id: number;
-  username: string;
-  role: "user" | "admin";
-};
+import styles from "./admin-ingredients.module.css";
 
 type Equivalence = {
   fromQuantity: string;
@@ -48,12 +43,22 @@ function formatEquivalence(eq: IngredientDefinition["equivalences"][number]) {
   return `${eq.fromQuantity} ${eq.fromUnit} = ${eq.toQuantity} ${eq.toUnit}${note}`;
 }
 
+function toEquivForm(eq: IngredientDefinition["equivalences"][number]): Equivalence {
+  return {
+    fromQuantity: String(eq.fromQuantity),
+    fromUnit: eq.fromUnit,
+    toQuantity: String(eq.toQuantity),
+    toUnit: eq.toUnit,
+    note: eq.note ?? "",
+  };
+}
+
 export default function AdminIngredientsPage() {
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [ingredients, setIngredients] = useState<IngredientDefinition[]>([]);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [allowedUnitsText, setAllowedUnitsText] = useState("kg, g, unidad");
   const [equivalences, setEquivalences] = useState<Equivalence[]>([emptyEquivalence()]);
@@ -76,14 +81,13 @@ export default function AdminIngredientsPage() {
         }
 
         const sessionBody = await sessionRes.json();
-        const currentUser = (sessionBody.user ?? null) as User | null;
+        const currentUser = sessionBody.user ?? null;
 
         if (!currentUser || currentUser.role !== "admin") {
           router.push("/");
           return;
         }
 
-        setUser(currentUser);
         await loadIngredients();
       } catch {
         router.push("/login");
@@ -96,224 +100,154 @@ export default function AdminIngredientsPage() {
   }, [router]);
 
   async function loadIngredients() {
+    const res = await fetch("/api/admin/ingredients", { credentials: "include" });
+    const data = await res.json();
+    if (res.ok) setIngredients(data.ingredients ?? []);
+    else setError("No se pudo cargar el catálogo");
+  }
+
+  function startEdit(ing: IngredientDefinition) {
+    setEditingId(ing.id);
+    setName(ing.name);
+    setAllowedUnitsText(ing.allowedUnits.join(", "));
+    setEquivalences(ing.equivalences.length > 0 ? ing.equivalences.map(toEquivForm) : [emptyEquivalence()]);
+    setImageFile(null);
+    setImagePreview(ing.imageUrl ?? "");
     setError("");
-    try {
-      const res = await fetch("/api/admin/ingredients", {
-        credentials: "include",
-      });
-
-      if (!res.ok) throw new Error("No se pudo cargar el catálogo");
-
-      const data = await res.json();
-      setIngredients(data.ingredients ?? []);
-    } catch {
-      setError("No se pudo cargar el catálogo de ingredientes");
-    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function updateEquivalence(index: number, field: keyof Equivalence, value: string) {
-    setEquivalences((prev) => prev.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)));
-  }
-
-  function addEquivalenceRow() {
-    setEquivalences((prev) => [...prev, emptyEquivalence()]);
-  }
-
-  function removeEquivalenceRow(index: number) {
-    setEquivalences((prev) => prev.filter((_, itemIndex) => itemIndex !== index));
+  function cancelEdit() {
+    setEditingId(null);
+    setName("");
+    setAllowedUnitsText("kg, g, unidad");
+    setEquivalences([emptyEquivalence()]);
+    setImageFile(null);
+    setImagePreview("");
+    setError("");
   }
 
   function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
     if (!file) return;
-
-    if (file.type !== "image/png") {
-      setError("Solo se permiten imágenes PNG");
-      return;
-    }
-    if (file.size > 500 * 1024) {
-      setError("La imagen no puede superar 500KB");
-      return;
-    }
-
+    if (file.type !== "image/png") { setError("Solo se permiten imágenes PNG"); return; }
+    if (file.size > 500 * 1024) { setError("La imagen no puede superar 500KB"); return; }
     setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
     setError("");
+    const reader = new FileReader();
+    reader.onload = (e) => setImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  function updateEquivalence(index: number, field: keyof Equivalence, value: string) {
+    setEquivalences((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
+  }
+
+  async function handleDelete(id: number, ingredientName: string) {
+    if (!confirm(`¿Eliminar "${ingredientName}"? Esta acción no se puede deshacer.`)) return;
+    const res = await fetch(`/api/admin/ingredients/${id}`, { method: "DELETE", credentials: "include" });
+    if (res.ok) {
+      setIngredients((prev) => prev.filter((item) => item.id !== id));
+      if (editingId === id) cancelEdit();
+    } else {
+      setError("No se pudo eliminar el ingrediente");
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     const normalizedName = name.trim();
-    if (!normalizedName) {
-      setError("Ingresa el nombre del ingrediente");
-      return;
-    }
+    if (!normalizedName) { setError("Ingresa el nombre del ingrediente"); return; }
 
     setSaving(true);
     setError("");
 
+    const formData = new FormData();
+    formData.append("name", normalizedName);
+    formData.append("allowedUnits", JSON.stringify(
+      allowedUnitsText.split(",").map((u) => u.trim()).filter(Boolean)
+    ));
+    formData.append("equivalences", JSON.stringify(
+      equivalences.filter((eq) => eq.fromUnit && eq.toQuantity && eq.toUnit)
+    ));
+    const url = editingId ? `/api/admin/ingredients/${editingId}` : "/api/admin/ingredients";
+    const method = editingId ? "PATCH" : "POST";
+
     try {
-      const formData = new FormData();
-      formData.append("name", normalizedName);
-      formData.append(
-        "allowedUnits",
-        JSON.stringify(
-          allowedUnitsText
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean)
-        )
-      );
-      formData.append(
-        "equivalences",
-        JSON.stringify(
-          equivalences.filter((item) => item.fromQuantity && item.fromUnit && item.toQuantity && item.toUnit)
-        )
-      );
-      if (imageFile) {
-        formData.append("image", imageFile);
-      }
-
-      const res = await fetch("/api/admin/ingredients", {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
-
+      const res = await fetch(url, { method, credentials: "include", body: formData });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "No se pudo guardar el ingrediente");
-      }
+      if (!res.ok) throw new Error(data.error || "No se pudo guardar");
 
-      setIngredients((prev) => [data.ingredient, ...prev]);
-      setName("");
-      setAllowedUnitsText("kg, g, unidad");
-      setEquivalences([emptyEquivalence()]);
-      setImageFile(null);
-      setImagePreview("");
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "No se pudo guardar el ingrediente");
+      if (editingId) {
+        setIngredients((prev) => prev.map((item) => (item.id === editingId ? data.ingredient : item)));
+      } else {
+        setIngredients((prev) => [data.ingredient, ...prev]);
+      }
+      cancelEdit();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo guardar");
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading || !user) {
-    return (
-      <main>
-        <Card>
-          <p>Cargando panel de administrador...</p>
-        </Card>
-      </main>
-    );
+  if (loading) {
+    return <main><Card><p>Cargando panel de administrador...</p></Card></main>;
   }
 
   return (
-    <main>
-      <Card>
-        <h1>Ingredientes administrables</h1>
-        <p>Define ingredientes, unidades válidas y equivalencias para que el resto del sistema los use de forma consistente.</p>
+    <main className={styles.page}>
+      <Card className={styles.headerCard}>
+        <h1>Ingredientes</h1>
+        <p>Gestiona el catálogo de ingredientes, sus unidades permitidas y equivalencias.</p>
       </Card>
 
-      <Card style={{ marginTop: "2rem" }}>
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1rem" }}>
+      <Card className={styles.formCard}>
+        <h2 style={{ marginTop: 0, color: "var(--jumbo-green-dark)" }}>
+          {editingId ? "Editar ingrediente" : "Nuevo ingrediente"}
+        </h2>
+
+        <form onSubmit={handleSubmit} className={styles.formGrid}>
           <div>
-            <label style={{ display: "block", fontWeight: 600, marginBottom: "0.5rem" }}>Nombre del ingrediente</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Ej: Arroz"
-              style={{ width: "100%" }}
-            />
+            <label className={styles.fieldLabel}>Nombre del ingrediente</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Arroz" style={{ width: "100%" }} />
           </div>
 
           <div>
-            <label style={{ display: "block", fontWeight: 600, marginBottom: "0.5rem" }}>Unidades permitidas</label>
-            <input
-              type="text"
-              value={allowedUnitsText}
-              onChange={(event) => setAllowedUnitsText(event.target.value)}
-              placeholder="kg, g, unidad"
-              style={{ width: "100%" }}
-            />
-            <p style={{ margin: "0.5rem 0 0", color: "var(--muted)", fontSize: "0.9rem" }}>
-              Separa las unidades con coma. Ejemplo: kg, g, unidad, taza.
-            </p>
+            <label className={styles.fieldLabel}>Unidades permitidas</label>
+            <input type="text" value={allowedUnitsText} onChange={(e) => setAllowedUnitsText(e.target.value)} placeholder="kg, g, unidad" style={{ width: "100%" }} />
+            <p className={styles.hint}>Separa con coma. Ej: kg, g, unidad, taza.</p>
           </div>
 
           <div>
-            <label style={{ display: "block", fontWeight: 600, marginBottom: "0.5rem" }}>Imagen del ingrediente</label>
-            <input
-              type="file"
-              accept="image/png"
-              onChange={handleImageChange}
-              style={{ width: "100%", padding: "0.5rem" }}
-            />
-            <p style={{ margin: "0.5rem 0 0", color: "var(--muted)", fontSize: "0.9rem" }}>
-              PNG. Máximo 500KB.
-            </p>
-            {imagePreview && (
-              <div style={{ marginTop: "1rem" }}>
-                <p style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Vista previa:</p>
-                <img
-                  src={imagePreview}
-                  alt="preview"
-                  style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "8px" }}
-                />
-              </div>
-            )}
+            <label className={styles.fieldLabel}>Imagen del ingrediente</label>
+            <input type="file" accept="image/png" onChange={handleImageChange} style={{ width: "100%" }} />
+            <p className={styles.hint}>PNG · máx. 500 KB</p>
+            {imagePreview && <img src={imagePreview} alt="Vista previa" className={styles.imagePreview} />}
           </div>
 
           <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", marginBottom: "0.75rem" }}>
-              <label style={{ fontWeight: 600 }}>Equivalencias</label>
-              <button type="button" onClick={addEquivalenceRow}>Agregar equivalencia</button>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem" }}>
+              <label className={styles.fieldLabel} style={{ margin: 0 }}>Equivalencias</label>
+              <button type="button" className={styles.addBtn} onClick={() => setEquivalences((prev) => [...prev, emptyEquivalence()])}>
+                + Agregar
+              </button>
             </div>
 
-            <div style={{ display: "grid", gap: "0.75rem" }}>
-              {equivalences.map((equivalence, index) => (
-                <div key={`${index}-${equivalence.fromUnit}`} style={{ display: "grid", gap: "0.75rem", padding: "0.75rem", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "12px" }}>
-                  <div style={{ display: "grid", gap: "0.5rem", gridTemplateColumns: "0.5fr 1fr 1fr 1fr", alignItems: "center" }}>
-                    <div style={{ fontWeight: 600, display: "flex", alignItems: "center" }}>1</div>
-                    <select
-                      value={equivalence.fromUnit}
-                      onChange={(event) => updateEquivalence(index, "fromUnit", event.target.value)}
-                    >
-                      <option value="">Selecciona unidad</option>
-                      <option value="taza">taza</option>
-                      <option value="cda.">cda.</option>
-                      <option value="cdta.">cdta.</option>
-                      <option value="unidad">unidad</option>
+            <div style={{ display: "grid", gap: "0.6rem" }}>
+              {equivalences.map((eq, idx) => (
+                <div key={idx} className={styles.equivBlock}>
+                  <div className={styles.equivRow}>
+                    <span className={styles.equivLabel}>1</span>
+                    <select value={eq.fromUnit} onChange={(e) => updateEquivalence(idx, "fromUnit", e.target.value)}>
+                      <option value="">Unidad origen</option>
+                      {["taza", "cda.", "cdta.", "unidad"].map((u) => <option key={u} value={u}>{u}</option>)}
                     </select>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="200"
-                      value={equivalence.toQuantity}
-                      onChange={(event) => updateEquivalence(index, "toQuantity", event.target.value)}
-                    />
-                    <input
-                      type="text"
-                      placeholder="g"
-                      value={equivalence.toUnit}
-                      onChange={(event) => updateEquivalence(index, "toUnit", event.target.value)}
-                    />
+                    <input type="number" min="0" step="0.01" placeholder="Cantidad destino" value={eq.toQuantity} onChange={(e) => updateEquivalence(idx, "toQuantity", e.target.value)} />
+                    <input type="text" placeholder="Unidad destino (g)" value={eq.toUnit} onChange={(e) => updateEquivalence(idx, "toUnit", e.target.value)} />
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Nota opcional, por ejemplo: arroz crudo"
-                    value={equivalence.note}
-                    onChange={(event) => updateEquivalence(index, "note", event.target.value)}
-                  />
                   {equivalences.length > 1 && (
-                    <button type="button" onClick={() => removeEquivalenceRow(index)} style={{ justifySelf: "start" }}>
+                    <button type="button" className={styles.removeBtn} onClick={() => setEquivalences((prev) => prev.filter((_, i) => i !== idx))}>
                       Quitar equivalencia
                     </button>
                   )}
@@ -322,49 +256,59 @@ export default function AdminIngredientsPage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
-            <button type="submit" disabled={saving}>
-              {saving ? "Guardando..." : "Guardar ingrediente"}
+          {error && <p className={styles.formError}>{error}</p>}
+
+          <div className={styles.formActions}>
+            <button type="submit" disabled={saving} className={styles.submitBtn}>
+              {saving ? "Guardando..." : editingId ? "Guardar cambios" : "Guardar ingrediente"}
             </button>
-            {error && <span style={{ color: "crimson" }}>{error}</span>}
+            {editingId && (
+              <button type="button" className={styles.cancelBtn} onClick={cancelEdit}>
+                Cancelar
+              </button>
+            )}
           </div>
         </form>
       </Card>
 
-      <Card style={{ marginTop: "2rem" }}>
-        <h2>Ingredientes registrados</h2>
+      <Card className={styles.listCard}>
+        <h2 style={{ marginTop: 0, color: "var(--jumbo-green-dark)" }}>
+          Ingredientes registrados
+          <span style={{ marginLeft: "0.6rem", fontWeight: 400, fontSize: "1rem", color: "var(--muted)" }}>
+            ({ingredients.length})
+          </span>
+        </h2>
+
         {ingredients.length === 0 ? (
-          <p style={{ color: "var(--muted)" }}>Aún no has agregado ingredientes al catálogo.</p>
+          <p style={{ color: "var(--muted)" }}>Aún no hay ingredientes en el catálogo.</p>
         ) : (
-          <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
-            {ingredients.map((ingredient) => (
-              <article key={ingredient.id} style={{ padding: "1rem", borderRadius: "12px", border: "1px solid rgba(0,0,0,0.08)" }}>
-                <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-                  {ingredient.imageUrl && (
-                    <img
-                      src={ingredient.imageUrl}
-                      alt={ingredient.name}
-                      style={{ width: "80px", height: "80px", objectFit: "contain", borderRadius: "8px" }}
-                    />
-                  )}
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ marginTop: 0 }}>{ingredient.name}</h3>
-                    <p style={{ marginBottom: "0.5rem" }}>
-                      <strong>Unidades permitidas:</strong> {ingredient.allowedUnits.length > 0 ? ingredient.allowedUnits.join(", ") : "Sin unidades definidas"}
+          <div className={styles.ingredientList}>
+            {ingredients.map((ing) => (
+              <article key={ing.id} className={styles.ingredientItem}>
+                {ing.imageUrl ? (
+                  <img src={ing.imageUrl} alt={ing.name} className={styles.ingredientThumb} />
+                ) : (
+                  <div className={styles.ingredientThumbPlaceholder}><i className="fa-solid fa-seedling" /></div>
+                )}
+                <div className={styles.ingredientInfo}>
+                  <h3 className={styles.ingredientName}>{ing.name}</h3>
+                  <p className={styles.ingredientMeta}>
+                    <strong>Unidades:</strong> {ing.allowedUnits.length > 0 ? ing.allowedUnits.join(", ") : "—"}
+                  </p>
+                  {ing.equivalences.length > 0 && (
+                    <p className={styles.ingredientMeta}>
+                      <strong>Equivalencias:</strong>{" "}
+                      {ing.equivalences.map((eq) => `${eq.fromQuantity} ${eq.fromUnit} = ${eq.toQuantity} ${eq.toUnit}`).join(" · ")}
                     </p>
-                    <div>
-                      <strong>Equivalencias:</strong>
-                      {ingredient.equivalences.length === 0 ? (
-                        <p style={{ marginTop: "0.5rem", color: "var(--muted)" }}>Sin equivalencias registradas.</p>
-                      ) : (
-                        <ul style={{ marginTop: "0.5rem", marginBottom: 0 }}>
-                          {ingredient.equivalences.map((equivalence, index) => (
-                            <li key={`${ingredient.id}-${index}`}>{formatEquivalence(equivalence)}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
+                  )}
+                </div>
+                <div className={styles.itemActions}>
+                  <button className={styles.editBtn} onClick={() => startEdit(ing)}>
+                    <i className="fa-solid fa-pen" /> Editar
+                  </button>
+                  <button className={styles.deleteBtn} onClick={() => handleDelete(ing.id, ing.name)}>
+                    <i className="fa-solid fa-trash" /> Eliminar
+                  </button>
                 </div>
               </article>
             ))}

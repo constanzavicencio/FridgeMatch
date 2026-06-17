@@ -1,0 +1,234 @@
+.page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+/* ─── Header card ─────────────────────────────────── */
+.headerCard {
+  border-left: 4px solid var(--jumbo-green-light);
+}
+
+/* ─── Form card ────────────────────────────────────── */
+.formCard {
+  border: 1px solid rgba(36, 96, 64, 0.18);
+}
+
+.formGrid {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.fieldLabel {
+  display: block;
+  font-weight: 700;
+  color: var(--jumbo-green-dark);
+  margin-bottom: 0.35rem;
+  font-size: 0.95rem;
+}
+
+.hint {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.imagePreview {
+  margin-top: 0.6rem;
+  max-height: 140px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.equivBlock {
+  border: 1px solid rgba(36, 96, 64, 0.14);
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.equivRow {
+  display: grid;
+  grid-template-columns: 0.4fr 1fr 1fr 1fr;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.equivLabel {
+  font-weight: 700;
+  color: var(--jumbo-green-dark);
+  font-size: 0.9rem;
+}
+
+.formActions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.submitBtn {
+  background: var(--jumbo-green-light);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+.submitBtn:hover { background: var(--jumbo-green); }
+.submitBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.cancelBtn {
+  background: transparent;
+  border: 1px solid rgba(36, 96, 64, 0.35);
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  font-weight: 600;
+  color: var(--jumbo-green-dark);
+  cursor: pointer;
+}
+
+.addBtn {
+  background: transparent;
+  border: 1px solid var(--jumbo-green);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-weight: 600;
+  color: var(--jumbo-green);
+  cursor: pointer;
+  font-size: 0.88rem;
+  transition: all 150ms;
+}
+
+.addBtn:hover { background: rgba(47, 201, 80, 0.08); }
+
+.removeBtn {
+  background: transparent;
+  border: 1px solid rgba(177, 0, 36, 0.4);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.82rem;
+  color: #b10024;
+  cursor: pointer;
+}
+
+.formError {
+  background: rgba(255, 164, 23, 0.12);
+  border: 1px solid rgba(255, 164, 23, 0.5);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  color: #8a4900;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ─── List card ─────────────────────────────────────── */
+.listCard {
+  border: 1px solid rgba(36, 96, 64, 0.14);
+}
+
+.ingredientList {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.ingredientItem {
+  border: 1px solid rgba(36, 96, 64, 0.14);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: flex-start;
+  background: #fff;
+}
+
+.ingredientThumb {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #f0f9f0;
+}
+
+.ingredientThumbPlaceholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  background: #e8f5e2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--jumbo-green);
+  opacity: 0.5;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.ingredientInfo {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.ingredientName {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--jumbo-green-dark);
+}
+
+.ingredientMeta {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.itemActions {
+  display: flex;
+  gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.editBtn {
+  background: transparent;
+  border: 1px solid var(--jumbo-green);
+  border-radius: 999px;
+  padding: 0.32rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--jumbo-green);
+  cursor: pointer;
+  transition: all 150ms;
+  white-space: nowrap;
+}
+
+.editBtn:hover { background: rgba(47, 201, 80, 0.1); }
+
+.deleteBtn {
+  background: transparent;
+  border: 1px solid rgba(177, 0, 36, 0.35);
+  border-radius: 999px;
+  padding: 0.32rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #b10024;
+  cursor: pointer;
+  transition: all 150ms;
+  white-space: nowrap;
+}
+
+.deleteBtn:hover { background: rgba(177, 0, 36, 0.07); }
+
+@media (max-width: 640px) {
+  .ingredientItem {
+    grid-template-columns: 1fr;
+  }
+
+  .equivRow {
+    grid-template-columns: 1fr 1fr;
+  }
+}
