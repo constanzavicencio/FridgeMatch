@@ -170,6 +170,9 @@ export default function AdminIngredientsPage() {
     formData.append("equivalences", JSON.stringify(
       equivalences.filter((eq) => eq.fromUnit && eq.toQuantity && eq.toUnit)
     ));
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
     const url = editingId ? `/api/admin/ingredients/${editingId}` : "/api/admin/ingredients";
     const method = editingId ? "PATCH" : "POST";
 
