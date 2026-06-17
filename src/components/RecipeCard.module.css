@@ -37,7 +37,7 @@
   white-space: nowrap;
 }
 
-.difficulty.fácil {
+.difficulty.facil {
   background: rgba(47, 201, 80, 0.1);
   color: #2fc950;
 }
@@ -47,9 +47,17 @@
   color: #d4a520;
 }
 
-.difficulty.difícil {
+.difficulty.dificil {
   background: rgba(200, 0, 0, 0.1);
   color: #c80000;
+}
+
+.ratingLine {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .description {
@@ -110,6 +118,22 @@
 
 .ingredientImage {
   object-fit: contain;
+}
+
+.favoriteBtn {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  color: var(--foreground);
+  cursor: pointer;
+  justify-self: flex-start;
+}
+
+.favoriteActive {
+  color: #b10024;
+  border-color: rgba(177, 0, 36, 0.5);
+  background: rgba(177, 0, 36, 0.08);
 }
 
 @media (max-width: 640px) {

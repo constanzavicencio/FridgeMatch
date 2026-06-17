@@ -16,25 +16,30 @@ export default function PerfilPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("fm_token");
-    const userStr = localStorage.getItem("fm_token_user");
-    
-    if (!token || !userStr) {
-      router.push("/login");
-      return;
+    async function checkSession() {
+      try {
+        const res = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        if (!res.ok) {
+          router.push("/login");
+          return;
+        }
+
+        const body = await res.json();
+        setUser(body.user ?? null);
+      } catch {
+        router.push("/login");
+      } finally {
+        setLoading(false);
+      }
     }
 
-    try {
-      const userData = JSON.parse(userStr);
-      setUser(userData);
-    } catch (e) {
-      router.push("/login");
-    }
+    checkSession();
   }, [router]);
-
-  useEffect(() => {
-    setLoading(false);
-  }, []);
 
   if (loading || !user) {
     return (

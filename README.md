@@ -64,3 +64,41 @@ El sistema generará sugerencias de compra referenciales asociadas a los ingredi
 
 ## Funcionalidad 6: Integración visual con la plataforma Jumbo
 La funcionalidad será presentada como parte de la experiencia digital de Jumbo (jumbo.cl), manteniendo coherencia con su interfaz y evitando redirecciones externas directas. 
+
+## Setup local de autenticación
+
+Esta app usa sesión con cookie `httpOnly` (`fm_session`) emitida por el backend de Next.js.
+
+1. Copia `.env.local.example` a `.env.local`.
+2. Levanta Supabase local:
+
+```bash
+npm run db:start
+```
+
+3. Obtén las claves locales con:
+
+```bash
+npm run db:status
+```
+
+4. Completa en `.env.local`:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SECRET_KEY`
+- `AUTH_SECRET`
+- `SUPABASE_INGREDIENTS_BUCKET`
+
+5. Levanta la app:
+
+```bash
+npm run dev
+```
+
+## Checklist rápido de auth local
+
+1. Registrar usuario en `/register`.
+2. Verificar redirección a `/sesion` y navbar autenticado.
+3. Recargar `/perfil` y `/fridge` (la sesión debe persistir por cookie).
+4. Cerrar sesión desde navbar y comprobar bloqueo de rutas protegidas.

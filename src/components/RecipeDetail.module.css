@@ -61,7 +61,7 @@
   white-space: nowrap;
 }
 
-.difficulty.fácil {
+.difficulty.facil {
   background: rgba(47, 201, 80, 0.1);
   color: #2fc950;
 }
@@ -71,9 +71,14 @@
   color: #d4a520;
 }
 
-.difficulty.difícil {
+.difficulty.dificil {
   background: rgba(200, 0, 0, 0.1);
   color: #c80000;
+}
+
+.ratingSummary {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
 }
 
 .description {
@@ -167,6 +172,61 @@
   line-height: 1.6;
 }
 
+.favoriteBtn {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.favoriteActive {
+  color: #b10024;
+  border-color: rgba(177, 0, 36, 0.5);
+  background: rgba(177, 0, 36, 0.08);
+}
+
+.textMuted {
+  margin: 0;
+  color: var(--muted);
+}
+
+.starsGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.starBtn {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: transparent;
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+  cursor: pointer;
+}
+
+.starSelected {
+  border-color: rgba(10, 137, 32, 0.8);
+  background: rgba(10, 137, 32, 0.12);
+  color: var(--jumbo-green);
+}
+
+.commentInput {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 0.75rem;
+  resize: vertical;
+  margin-bottom: 0.75rem;
+}
+
+.ratingActions {
+  display: flex;
+  gap: 0.6rem;
+}
+
 @media (max-width: 640px) {
   .modal {
     max-width: 100%;
@@ -177,5 +237,9 @@
 
   .meta {
     grid-template-columns: 1fr;
+  }
+
+  .starsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
