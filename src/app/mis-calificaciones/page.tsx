@@ -11,6 +11,26 @@ export default function MisCalificacionesPage() {
   const [selected, setSelected] = useState<RecipeRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [canToggleFavorite, setCanToggleFavorite] = useState(false);
+
+  async function loadSessionRole() {
+    try {
+      const res = await fetch("/api/auth/me", {
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        setCanToggleFavorite(false);
+        return;
+      }
+
+      const data = await res.json();
+      setCanToggleFavorite(data?.user?.role === "user");
+    } catch {
+      setCanToggleFavorite(false);
+    }
+  }
 
   async function loadMyRatings() {
     setLoading(true);
@@ -36,6 +56,7 @@ export default function MisCalificacionesPage() {
   }
 
   useEffect(() => {
+    loadSessionRole();
     loadMyRatings();
   }, []);
 
@@ -86,7 +107,12 @@ export default function MisCalificacionesPage() {
 
       <div style={{ marginTop: "2rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
         {recipes.map((recipe) => (
-          <RecipeCard key={recipe.id} recipe={recipe} onClick={setSelected} onToggleFavorite={toggleFavorite} />
+          <RecipeCard
+            key={recipe.id}
+            recipe={recipe}
+            onClick={setSelected}
+            onToggleFavorite={canToggleFavorite ? toggleFavorite : undefined}
+          />
         ))}
       </div>
 
@@ -94,7 +120,7 @@ export default function MisCalificacionesPage() {
         <RecipeDetail
           recipe={selected}
           onClose={() => setSelected(null)}
-          onToggleFavorite={toggleFavorite}
+          onToggleFavorite={canToggleFavorite ? toggleFavorite : undefined}
           onRatingSaved={loadMyRatings}
         />
       )}

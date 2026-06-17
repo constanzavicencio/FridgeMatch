@@ -17,13 +17,28 @@ export function formatIngredient(
       return `1 ${nameLowercase}`;
     }
 
+    if (quantity === 0.5) {
+      return `½ ${nameLowercase}`;
+    }
+
     // Pluralizar: reglas simples para español
     const plural = pluralizeSpanish(nameLowercase);
-    return `${quantity} ${plural}`;
+    return `${formatQuantity(quantity)} ${plural}`;
   }
 
   // Caso general: mostrar cantidad, unidad y nombre
-  return `${quantity} ${unit} de ${nameLowercase}`;
+  return `${formatQuantity(quantity)} ${unit} de ${nameLowercase}`;
+}
+
+function formatQuantity(quantity: number): string {
+  const whole = Math.trunc(quantity);
+  const decimal = Math.abs(quantity - whole);
+
+  if (Math.abs(decimal - 0.5) < Number.EPSILON) {
+    return whole === 0 ? "½" : `${whole} ½`;
+  }
+
+  return `${quantity}`;
 }
 
 /**

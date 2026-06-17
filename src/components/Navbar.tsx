@@ -63,10 +63,10 @@ export default function Navbar() {
   return (
     <header className={styles.header}>
       <div className={styles.brand}>
-        <Link href={user ? "/sesion" : "/"}>
+        <Link href="/">
           <Image
             loading="eager"
-            src="/logo.png"
+            src="/logo_nuevoo.png"
             alt="FridgeMatch"
             width={100}
             height={50}
@@ -109,15 +109,9 @@ export default function Navbar() {
             </button>
           </>
         ) : (
-          <>
-            <Link href="/login" className={styles.link}>
-              Iniciar
-            </Link>
-
-            <Link href="/register" className={styles.link}>
-              Registro
-            </Link>
-          </>
+          <Link href="/login" className={styles.link}>
+            Ingresar
+          </Link>
         )}
       </div>
     </header>

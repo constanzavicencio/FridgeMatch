@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import styles from "../auth-pages.module.css";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -33,7 +35,7 @@ export default function RegisterPage() {
       }
 
       window.dispatchEvent(new Event("fm-auth-change"));
-      router.push("/sesion");
+      router.push("/");
       router.refresh();
     } catch {
       setError("No se pudo completar el registro");
@@ -43,29 +45,42 @@ export default function RegisterPage() {
   }
 
   return (
-    <main>
-      <h1>Registro</h1>
+    <main className={styles.authMain}>
+      <section className={styles.authCard}>
+        <h1 className={styles.title}>Registro</h1>
+        <p className={styles.subtitle}>Crea tu cuenta para guardar recetas favoritas y personalizar tu experiencia.</p>
 
-      <form onSubmit={submit} style={{ display: "grid", gap: 12 }}>
-        <input
-          placeholder="Usuario"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
+        <form onSubmit={submit} className={styles.form}>
+          <input
+            id="register-username"
+            className={styles.input}
+            placeholder="Elige un usuario"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
+          />
 
-        <input
-          placeholder="Contraseña"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <input
+            id="register-password"
+            className={styles.input}
+            placeholder="Crea una contraseña"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+          />
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Creando cuenta..." : "Crear cuenta"}
-        </button>
+          <button type="submit" disabled={loading} className={styles.submitBtn}>
+            {loading ? "Creando cuenta..." : "Crear cuenta"}
+          </button>
 
-        {error && <div style={{ color: "crimson" }}>{error}</div>}
-      </form>
+          {error && <div className={styles.error}>{error}</div>}
+        </form>
+
+        <p className={styles.switchText}>
+          ¿Ya tienes cuenta? <Link href="/login" className={styles.switchLink}>Ingresa aquí</Link>
+        </p>
+      </section>
     </main>
   );
 }

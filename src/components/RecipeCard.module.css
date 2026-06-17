@@ -108,12 +108,24 @@
   gap: 0.5rem;
 }
 
+.ingredientItemEmpty {
+  visibility: hidden;
+}
+
+.moreIngredients,
+.moreIngredientsPlaceholder {
+  min-height: 1.35rem;
+}
+
+.moreIngredientsPlaceholder {
+  visibility: hidden;
+}
+
 .ingredientImage,
 .ingredientImagePlaceholder {
   width: 22px;
   height: 22px;
   flex: 0 0 22px;
-  border-radius: 6px;
 }
 
 .ingredientImage {

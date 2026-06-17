@@ -4,7 +4,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.75rem 1.5rem;
-  border-bottom: 3px solid var(--jumbo-green);
+  border-bottom: 2px solid var(--jumbo-green-light);
   background: var(--jumbo-white);
 }
 
@@ -38,7 +38,7 @@
 }
 
 .nav a:hover {
-  color: var(--jumbo-green);
+  color: var(--jumbo-green-dark);
 }
 
 .actions {
@@ -48,7 +48,7 @@
 }
 
 .btn {
-  background: var(--jumbo-green);
+  background: var(--jumbo-green-light);
   color: white;
   border: none;
   padding: 0.45rem 0.75rem;
@@ -59,23 +59,26 @@
 }
 
 .btn:hover {
-  background: #076a18;
+  background: var(--jumbo-green);
 }
 
 .link {
-  color: var(--jumbo-dark);
+  color: var(--jumbo-green-dark);
   text-decoration: none;
-  padding: 0.35rem 0.5rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgba(36, 96, 64, 0.3);
+  border-radius: 999px;
   font-weight: 600;
-  transition: color 150ms ease;
+  transition: all 150ms ease;
 }
 
 .link:hover {
   color: var(--jumbo-green);
+  border-color: rgba(47, 201, 80, 0.6);
 }
 
 .user {
   font-weight: 600;
-  color: var(--jumbo-green);
+  color: var(--jumbo-green-dark);
   font-size: 0.95rem;
 }

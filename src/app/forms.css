@@ -6,7 +6,7 @@ input, textarea, select {
 }
 
 input:focus, textarea:focus, select:focus {
-  outline: 2px solid var(--jumbo-green);
+  outline: 2px solid var(--jumbo-green-light);
   outline-offset: -1px;
 }
 
@@ -20,7 +20,7 @@ form {
 }
 
 form button {
-  background: var(--jumbo-green);
+  background: var(--jumbo-green-light);
   color: white;
   border: none;
   padding: 0.6rem 1rem;
@@ -30,6 +30,6 @@ form button {
 }
 
 form button:hover {
-  background: #076a18;
+  background: var(--jumbo-green);
   transform: translateY(-2px);
 }

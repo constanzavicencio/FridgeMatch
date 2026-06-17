@@ -79,7 +79,7 @@ export default function AdminIngredientsPage() {
         const currentUser = (sessionBody.user ?? null) as User | null;
 
         if (!currentUser || currentUser.role !== "admin") {
-          router.push("/sesion");
+          router.push("/");
           return;
         }
 

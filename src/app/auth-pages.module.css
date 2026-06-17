@@ -1,0 +1,87 @@
+.authMain {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.authCard {
+  width: min(460px, 100%);
+  border: 1px solid rgba(36, 96, 64, 0.2);
+  border-radius: 14px;
+  padding: 1.5rem;
+  background: var(--jumbo-white);
+  box-shadow: 0 4px 14px rgba(36, 96, 64, 0.08);
+}
+
+.title {
+  margin: 0;
+  color: var(--jumbo-green-dark);
+}
+
+.subtitle {
+  margin: 0.4rem 0 1.2rem;
+  color: var(--muted);
+}
+
+.form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.label {
+  font-weight: 700;
+  color: var(--jumbo-green-dark);
+  font-size: 0.95rem;
+}
+
+.input {
+  border: 1px solid rgba(36, 96, 64, 0.25);
+  background: var(--jumbo-white);
+}
+
+.submitBtn {
+  margin-top: 0.35rem;
+  background: var(--jumbo-green-light);
+}
+
+.submitBtn:hover {
+  background: var(--jumbo-green);
+}
+
+.error {
+  margin-top: 0.25rem;
+  border-radius: 8px;
+  background: rgba(255, 164, 23, 0.14);
+  border: 1px solid rgba(255, 164, 23, 0.5);
+  color: #8a4900;
+  padding: 0.55rem 0.65rem;
+  font-weight: 600;
+}
+
+.switchText {
+  margin: 1rem 0 0;
+  color: var(--jumbo-green);
+  font-weight: 700;
+}
+
+.switchLink {
+  color: var(--jumbo-green-light);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 150ms ease;
+}
+
+.switchLink:hover {
+  border-color: var(--jumbo-green-light);
+}
+
+@media (max-width: 640px) {
+  .authMain {
+    width: 100%;
+    margin: 0;
+  }
+
+  .authCard {
+    padding: 1.1rem;
+  }
+}

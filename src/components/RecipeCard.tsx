@@ -3,6 +3,7 @@
 import type { RecipeRecord } from "@/lib/recipe-types";
 import IngredientImage from "@/components/IngredientImage";
 import styles from "./RecipeCard.module.css";
+import { RecipeRating } from "@/components/RecipeRating";
 
 type RecipeCardProps = {
   recipe: RecipeRecord;
@@ -21,6 +22,10 @@ export default function RecipeCard({
   onClick,
   onToggleFavorite,
 }: RecipeCardProps) {
+  const visibleIngredients = recipe.ingredients.slice(0, 3);
+  const emptyIngredientRows = Math.max(0, 3 - visibleIngredients.length);
+  const hasMoreIngredients = recipe.ingredients.length > 3;
+
   return (
     <div className={styles.card} onClick={() => onClick?.(recipe)}>
       <div className={styles.header}>
@@ -32,27 +37,25 @@ export default function RecipeCard({
       </div>
 
       <div className={styles.ratingLine}>
-        <span>⭐ {recipe.averageRating.toFixed(1)}</span>
-        <span>({recipe.ratingsCount} calificaciones)</span>
+        <RecipeRating averageRating={recipe.averageRating} />
+        <span>({recipe.ratingsCount})</span>
       </div>
-
-      <p className={styles.description}>{recipe.description}</p>
 
       <div className={styles.meta}>
         <div className={styles.metaItem}>
-          <strong>⏱️</strong> {recipe.timeMinutes} min
+          <i className="fa-solid fa-stopwatch"></i> {recipe.timeMinutes} min
         </div>
 
         <div className={styles.metaItem}>
-          <strong>👥</strong> {recipe.servings} porciones
+          <i className="fa-solid fa-user-group"></i> {recipe.servings} porciones
         </div>
       </div>
 
       <div className={styles.ingredients}>
-        <strong>Ingredientes principales:</strong>
+        <strong>Ingredientes:</strong>
 
         <ul>
-          {recipe.ingredients.slice(0, 3).map((ing, idx) => (
+          {visibleIngredients.map((ing, idx) => (
             <li key={`${ing.productId}-${idx}`} className={styles.ingredientItem}>
               <IngredientImage
                 name={ing.name}
@@ -64,8 +67,22 @@ export default function RecipeCard({
             </li>
           ))}
 
-          {recipe.ingredients.length > 3 && (
-            <li>+{recipe.ingredients.length - 3} más</li>
+          {Array.from({ length: emptyIngredientRows }).map((_, idx) => (
+            <li
+              key={`ingredient-empty-${idx}`}
+              className={`${styles.ingredientItem} ${styles.ingredientItemEmpty}`}
+              aria-hidden="true"
+            >
+              <span>&nbsp;</span>
+            </li>
+          ))}
+
+          {hasMoreIngredients ? (
+            <li className={styles.moreIngredients}>+{recipe.ingredients.length - 3} más</li>
+          ) : (
+            <li className={styles.moreIngredientsPlaceholder} aria-hidden="true">
+              &nbsp;
+            </li>
           )}
         </ul>
       </div>
@@ -79,7 +96,15 @@ export default function RecipeCard({
             onToggleFavorite(recipe);
           }}
         >
-          {recipe.isFavorite ? "❤ Quitar de favoritos" : "♡ Agregar a favoritos"}
+          {recipe.isFavorite ? (
+                <>
+                  <i className="fa-solid fa-heart"></i> En favoritos
+                </>
+              ) : (
+                <>
+                  <i className="fa-regular fa-heart"></i> Agregar a favoritos
+                </>
+              )}
         </button>
       )}
     </div>

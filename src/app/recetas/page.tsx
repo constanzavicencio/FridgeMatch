@@ -13,6 +13,26 @@ export default function RecipesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | RecipeDifficulty>("all");
+  const [canToggleFavorite, setCanToggleFavorite] = useState(false);
+
+  async function loadSessionRole() {
+    try {
+      const res = await fetch("/api/auth/me", {
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        setCanToggleFavorite(false);
+        return;
+      }
+
+      const data = await res.json();
+      setCanToggleFavorite(data?.user?.role === "user");
+    } catch {
+      setCanToggleFavorite(false);
+    }
+  }
 
   async function loadRecipes() {
     setLoading(true);
@@ -38,6 +58,7 @@ export default function RecipesPage() {
   }
 
   useEffect(() => {
+    loadSessionRole();
     loadRecipes();
   }, []);
 
@@ -123,7 +144,7 @@ export default function RecipesPage() {
             key={recipe.id} 
             recipe={recipe}
             onClick={setSelectedRecipe}
-            onToggleFavorite={toggleFavorite}
+            onToggleFavorite={canToggleFavorite ? toggleFavorite : undefined}
           />
         ))}
       </div>
@@ -137,7 +158,7 @@ export default function RecipesPage() {
       {selectedRecipe && (
         <RecipeDetail 
           recipe={selectedRecipe}
-          onToggleFavorite={toggleFavorite}
+          onToggleFavorite={canToggleFavorite ? toggleFavorite : undefined}
           onRatingSaved={loadRecipes}
           onClose={() => setSelectedRecipe(null)}
         />

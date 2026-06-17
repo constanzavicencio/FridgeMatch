@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./forms.css";
+@import '@fortawesome/fontawesome-free/css/all.min.css';
 
 @font-face {
   font-family: 'Source Sans 3';
@@ -9,13 +10,16 @@
 }
 
 :root {
-  --jumbo-green: #0a8920;
   --jumbo-green-light: #2fc950;
+  --jumbo-green: #0a8920;
+  --jumbo-green-dark: #246040;
   --jumbo-yellow: #f8e688;
+  --jumbo-orange: #ffa417;
   --jumbo-light: #F5F5F5;
   --jumbo-white: #FFFFFF;
   --jumbo-dark: #333333;
   --jumbo-gray: #999999;
+  --jumbo-blue: #246040;
   
   --background: #f8fafc;
   --foreground: #333333;
@@ -64,12 +68,12 @@ main {
 h1 {
   font-size: 2rem;
   margin: 0 0 0.5rem 0;
-  color: var(--jumbo-blue);
+  color: var(--jumbo-green-dark);
   font-weight: bold;
 }
 
 h2 {
-  color: var(--jumbo-blue);
+  color: var(--jumbo-green-dark);
   font-weight: bold;
 }
 
