@@ -102,7 +102,7 @@ export default function HomePage() {
 
           <section className={`${styles.block} ${styles.featureBlock}`}>
             <Image
-              src="/fridgie_apoyado.png"
+              src="/fridgiee.png"
               alt="Fridgie asomándose"
               width={160}
               height={200}

@@ -32,7 +32,7 @@
 .peekMascot {
   position: absolute;
   right: 1.4rem;
-  bottom: calc(100% - 8px);
+  bottom: calc(100% - 11px);
   width: 300px;
   height: auto;
   z-index: 3;
