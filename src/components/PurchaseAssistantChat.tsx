@@ -195,7 +195,7 @@ export default function PurchaseAssistantChat({
     });
   }
 
-  function startProcessing() {
+  function startProcessing(deliveryWindow = orderDraft.deliveryWindow) {
     setStep("processing");
     setShowStepControls(false);
     setIsTyping(true);
@@ -215,7 +215,7 @@ export default function PurchaseAssistantChat({
       setOrderNumber(generatedOrder);
       pushMessage(
         "bot",
-        `¡Compra realizada! Llegará a tu domicilio dentro de 90 a 120 minutos, ¡gracias por usar FridgeMatch de Jumbo!\n\nN° pedido: ${generatedOrder}\nPrecio: ${formattedOrderTotal}\nNombre y apellido: ${orderDraft.fullName}\nRUT: ${orderDraft.rut}\nDireccion: ${orderDraft.address}\nHorario de entrega: ${orderDraft.deliveryWindow}`
+        `¡Compra realizada! Llegará a tu domicilio dentro de 90 a 120 minutos, ¡gracias por usar FridgeMatch de Jumbo!\n\nN° pedido: ${generatedOrder}\nPrecio: ${formattedOrderTotal}\nNombre y apellido: ${orderDraft.fullName}\nRUT: ${orderDraft.rut}\nDireccion: ${orderDraft.address}\nHorario de entrega: ${deliveryWindow}`
       );
       setStep("done");
     });
@@ -350,7 +350,7 @@ export default function PurchaseAssistantChat({
   function selectDeliveryWindow(window: DeliveryWindow) {
     setOrderDraft((prev) => ({ ...prev, deliveryWindow: window }));
     pushMessage("user", `${window}`);
-    startProcessing();
+    startProcessing(window);
   }
 
   useEffect(() => {
