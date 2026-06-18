@@ -134,11 +134,6 @@ export default function RecipesPage() {
         </div>
       </Card>
 
-      <Card>
-        <h1>Nuestras Recetas</h1>
-        <p>Descubre recetas creadas por la comunidad y guarda tus favoritas.</p>
-      </Card>
-
       <Card className={styles.filterCard} style={{ marginTop: "2rem" }}>
         <div className={styles.filterContainer}>
           <strong>Filtrar por dificultad:</strong>
