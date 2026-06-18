@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { RecipeRecord } from "@/lib/recipe-types";
 import IngredientImage from "@/components/IngredientImage";
-import { decimalToFraction } from "@/lib/fractionConverter";
 import { formatIngredient } from "@/lib/formatIngredient";
+import { normalizeIngredientName } from "@/lib/normalizeIngredientName";
 import { StarRating } from "@/components/StarRating";
 import { RecipeRating } from "@/components/RecipeRating";
+import { Sparkles } from "lucide-react";
+import PurchaseAssistantChat from "@/components/PurchaseAssistantChat";
 import styles from "./RecipeDetail.module.css";
 
 type RecipeDetailProps = {
@@ -17,13 +19,82 @@ type RecipeDetailProps = {
   onRatingSaved?: () => void;
 };
 
+type FridgeIngredient = {
+  name: string;
+  quantity: number;
+  unit: string;
+};
+
 function formatDifficulty(difficulty: string) {
   if (difficulty === "facil") return "Fácil";
   if (difficulty === "dificil") return "Difícil";
   return "Medio";
 }
 
-const STAR_VALUES = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+const MASS_TO_GRAMS: Record<string, number> = {
+  g: 1,
+  kg: 1000,
+};
+
+const VOLUME_TO_ML: Record<string, number> = {
+  ml: 1,
+  l: 1000,
+  cucharada: 15,
+  cucharadita: 5,
+  taza: 240,
+};
+
+function normalizeUnit(unit: string): string {
+  const normalized = unit.trim().toLowerCase();
+
+  if (["g", "gr", "gramo", "gramos"].includes(normalized)) return "g";
+  if (["kg", "kilo", "kilos", "kilogramo", "kilogramos"].includes(normalized)) return "kg";
+  if (["ml", "mililitro", "mililitros"].includes(normalized)) return "ml";
+  if (["l", "lt", "litro", "litros"].includes(normalized)) return "l";
+  if (["cucharada", "cucharadas", "cda", "cdas"].includes(normalized)) return "cucharada";
+  if (["cucharadita", "cucharaditas", "cdta", "cdtas"].includes(normalized)) return "cucharadita";
+  if (["taza", "tazas"].includes(normalized)) return "taza";
+  if (["unidad", "unidades"].includes(normalized)) return "unidad";
+  if (["diente", "dientes"].includes(normalized)) return "diente";
+  if (["pizca", "pizcas"].includes(normalized)) return "pizca";
+  if (normalized === "al gusto") return "al gusto";
+
+  return normalized;
+}
+
+function convertQuantity(quantity: number, fromUnit: string, toUnit: string): number | null {
+  const from = normalizeUnit(fromUnit);
+  const to = normalizeUnit(toUnit);
+
+  if (!Number.isFinite(quantity) || quantity < 0) return null;
+  if (from === to) return quantity;
+
+  if (from in MASS_TO_GRAMS && to in MASS_TO_GRAMS) {
+    const inGrams = quantity * MASS_TO_GRAMS[from];
+    return inGrams / MASS_TO_GRAMS[to];
+  }
+
+  if (from in VOLUME_TO_ML && to in VOLUME_TO_ML) {
+    const inMl = quantity * VOLUME_TO_ML[from];
+    return inMl / VOLUME_TO_ML[to];
+  }
+
+  return null;
+}
+
+function hasEnoughIngredient(
+  requiredQuantity: number,
+  requiredUnit: string,
+  fridgeMatches: FridgeIngredient[]
+): boolean {
+  const availableInRequiredUnit = fridgeMatches.reduce((sum, ingredient) => {
+    const converted = convertQuantity(ingredient.quantity, ingredient.unit, requiredUnit);
+    if (converted === null) return sum;
+    return sum + converted;
+  }, 0);
+
+  return availableInRequiredUnit + 1e-6 >= requiredQuantity;
+}
 
 export default function RecipeDetail({
   recipe,
@@ -39,6 +110,8 @@ export default function RecipeDetail({
   const [sessionRole, setSessionRole] = useState<"user" | "admin" | null | undefined>(
     undefined
   );
+  const [fridgeIngredients, setFridgeIngredients] = useState<FridgeIngredient[]>([]);
+  const [chatOpen, setChatOpen] = useState(false);
   const hasRatingSelected = rating >= 0.5;
   const hasExistingRating = !!recipe.myRating;
   const formattedRating = rating.toFixed(1).replace(".", ",");
@@ -72,6 +145,94 @@ export default function RecipeDetail({
   useEffect(() => {
     resolveSessionRole().then((role) => setSessionRole(role));
   }, []);
+
+  useEffect(() => {
+    if (sessionRole !== "user") {
+      setFridgeIngredients([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadFridgeIngredients() {
+      try {
+        const res = await fetch("/api/ingredients", {
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const items = Array.isArray(data?.ingredients)
+          ? data.ingredients
+              .map((item: { name?: string; quantity?: number; unit?: string }) => {
+                const normalizedName = item?.name
+                  ? normalizeIngredientName(item.name)
+                  : "";
+                const quantity = Number(item?.quantity);
+                const unit = String(item?.unit ?? "").trim();
+
+                if (!normalizedName || !Number.isFinite(quantity) || quantity <= 0 || !unit) {
+                  return null;
+                }
+
+                return {
+                  name: normalizedName,
+                  quantity,
+                  unit,
+                } as FridgeIngredient;
+              })
+              .filter((item): item is FridgeIngredient => item !== null)
+          : [];
+
+        if (!cancelled) {
+          setFridgeIngredients(items);
+        }
+      } catch {
+        // noop
+      }
+    }
+
+    loadFridgeIngredients();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionRole]);
+
+  const missingIngredientsCount = useMemo(() => {
+    if (sessionRole !== "user") return 0;
+
+    const groupedByName = fridgeIngredients.reduce((acc, ingredient) => {
+      const current = acc.get(ingredient.name) ?? [];
+      current.push(ingredient);
+      acc.set(ingredient.name, current);
+      return acc;
+    }, new Map<string, FridgeIngredient[]>());
+
+    return recipe.ingredients.reduce((count, ingredient) => {
+      const normalizedRecipeIngredient = normalizeIngredientName(ingredient.name);
+      const fridgeMatches = groupedByName.get(normalizedRecipeIngredient) ?? [];
+
+      if (fridgeMatches.length === 0) return count + 1;
+
+      return hasEnoughIngredient(
+        ingredient.quantityRequired,
+        ingredient.unit,
+        fridgeMatches
+      )
+        ? count
+        : count + 1;
+    }, 0);
+  }, [fridgeIngredients, recipe.ingredients, sessionRole]);
+
+  const chatEnabled = missingIngredientsCount > 0;
+
+  function openPurchaseChat() {
+    if (!chatEnabled) return;
+    setChatOpen(true);
+  }
 
   async function saveRating() {
     if (rating < 0.5) return;
@@ -378,6 +539,38 @@ export default function RecipeDetail({
               )}
             </div>
           </div>
+        )}
+
+        {sessionRole === "user" && (
+          <div className={styles.missingBannerWrap}>
+            <button
+              type="button"
+              className={`${styles.missingBanner} ${!chatEnabled ? styles.missingBannerDisabled : ""}`}
+              onClick={openPurchaseChat}
+              disabled={!chatEnabled}
+            >
+              <span className={styles.missingIcon}>
+                <Sparkles size={18} aria-hidden="true" />
+              </span>
+              <span className={styles.missingText}>
+                {chatEnabled ? (
+                  <>
+                    Te faltan <strong>{missingIngredientsCount}</strong> ingredientes para poder hacer esta receta
+                  </>
+                ) : (
+                  <>Ya tienes todos los ingredientes para esta receta.</>
+                )}
+              </span>
+            </button>
+          </div>
+        )}
+
+        {chatOpen && sessionRole === "user" && (
+          <PurchaseAssistantChat
+            isOpen={chatOpen}
+            onClose={() => setChatOpen(false)}
+            missingIngredientsCount={missingIngredientsCount}
+          />
         )}
 
       </div>
