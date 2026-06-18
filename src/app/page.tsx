@@ -66,14 +66,14 @@ export default function HomePage() {
                     </Link>
                   ) : (
                     <Link href="/admin/ingredientes">
-                      <Button className={styles.secondaryBtn}>Ir a panel admin</Button>
+                      <Button className={styles.secondaryBtn}>Registrar ingredientes</Button>
                     </Link>
                   )}
                 </>
               ) : (
                 <>
-                  <Link href="/login">
-                    <Button className={styles.primaryBtn}>Ingresar</Button>
+                  <Link href="/recetas">
+                    <Button className={styles.primaryBtn}>Ver recetas</Button>
                   </Link>
                   <Link href="/register">
                     <Button className={styles.secondaryBtn}>Crear cuenta</Button>

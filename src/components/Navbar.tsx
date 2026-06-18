@@ -80,21 +80,19 @@ export default function Navbar() {
 
         <Link href="/recetas">Recetas</Link>
 
-        {user?.role === "user" && <Link href="/fridge">Mi Refrigerador</Link>}
+        {user?.role === "user" && <Link href="/favoritas">Favoritas</Link>}
 
-        {user?.role === "user" && <Link href="/favoritas">Recetas Favoritas</Link>}
+        {user?.role === "user" && <Link href="/fridge">Refrigerador</Link>}
 
         {user?.role === "user" && (
-          <Link href="/mis-calificaciones">Mis Calificaciones</Link>
+          <Link href="/mis-calificaciones">Calificaciones</Link>
         )}
 
         {user?.role === "admin" && (
-          <Link href="/admin/ingredientes">Ingredientes admin</Link>
+          <Link href="/admin/ingredientes">Ingredientes</Link>
         )}
 
-        {user?.role === "admin" && <Link href="/admin/recetas">Subir Receta</Link>}
-
-        {user && <Link href="/perfil">Perfil</Link>}
+        {user?.role === "admin" && <Link href="/admin/recetas">Publicar</Link>}
       </nav>
 
       <div className={styles.actions}>

@@ -183,7 +183,7 @@ export default function RecipeDetail({
                   unit,
                 } as FridgeIngredient;
               })
-              .filter((item): item is FridgeIngredient => item !== null)
+                .filter((item: FridgeIngredient | null): item is FridgeIngredient => item !== null)
           : [];
 
         if (!cancelled) {
